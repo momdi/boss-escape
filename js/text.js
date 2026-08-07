@@ -83,6 +83,7 @@ const Txt = (function () {
     draw: draw,
     width: width,
     height: height,
+    pxOf: px,
     preload: preload,
     clear: function () { wCache.clear(); },
   };

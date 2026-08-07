@@ -32,6 +32,14 @@
   }
   function TW(str, size) { return Txt.width(str, size); }
 
+  /* 시트 한 행 = 화면 16 CSS px = 논리 8px.
+     오버레이 문구를 이 행 격자에 얹어 셀 텍스트처럼 줄이 맞게 한다. */
+  const ROWH = 8;
+  function RY(row, size) {
+    const p = Txt.pxOf(size || 11);
+    return row * ROWH + Math.round((ROWH - p) / 2);
+  }
+
   /* ---------------- 입력 ---------------- */
   const keys = Object.create(null);
   const pressed = Object.create(null);
@@ -63,6 +71,13 @@
     keys[k] = false;
   });
   window.addEventListener('blur', function () { for (const k in keys) keys[k] = false; });
+
+  // 키보드를 못 찾는 경우를 대비해 진행 화면은 클릭으로도 넘길 수 있게 한다
+  cv.addEventListener('pointerdown', function () {
+    if (G.state === 'play') return;
+    pressed.confirm = true;
+    Sfx.init(); Sfx.resume();
+  });
 
   function consume(k) { if (pressed[k]) { pressed[k] = false; return true; } return false; }
   function anyPressed() { return pressed.confirm || pressed.hide || pressed.dash; }
@@ -695,7 +710,7 @@
 
   function nextFloor() {
     if (FLOORS[G.floorIdx].final) {
-      G.state = 'ending'; G.stateTimer = 0; saveBest(); Sfx.ending();
+      G.state = 'ending'; G.stateTimer = 0; makeVerdict(true, saveBest()); Sfx.ending();
       return;
     }
     G.floorIdx++;
@@ -703,12 +718,28 @@
   }
 
   function startFloor() { buildLevel(); G.state = 'intro'; G.stateTimer = 0; }
-  function gameOver() { G.state = 'over'; G.stateTimer = 0; saveBest(); Sfx.over(); }
+  function gameOver() { G.state = 'over'; G.stateTimer = 0; makeVerdict(false, saveBest()); Sfx.over(); }
+
+  /** 결과 성적표 확정 — 등급/표정/촌평을 한 번만 뽑아 고정한다 */
+  function makeVerdict(cleared, newBest) {
+    const rank = cleared ? RANKS[RANKS.length - 1] : rankOf(G.score);
+    const pool = cleared ? CLEAR_LINES : rank.lines;
+    G.verdict = {
+      cleared: cleared,
+      title: cleared ? '정시 퇴근 성공' : rank.title,
+      face: cleared ? 'legend' : rank.face,
+      line: pool[(Math.random() * pool.length) | 0],
+      newBest: !!newBest,
+    };
+  }
+
   function saveBest() {
     if (G.score > G.best) {
       G.best = G.score;
       try { localStorage.setItem('boss_escape_best', String(G.best)); } catch (e) {}
+      return true;
     }
+    return false;
   }
 
   function respawn() {
@@ -1229,82 +1260,121 @@
       drawActor(SPR.boss[i], b);
     }
 
-    T('상사 피하기', CW / 2, 38, COL.navy, 18, 1, 'center');
-    T('OFFICE  ESCAPE', CW / 2, 54, COL.dim, 9, 1, 'center');
-    T('서류를 모두 챙겨 로비까지 탈출하라', CW / 2, 72, COL.white, 14, 1, 'center');
-    T('이동 WASD/방향키   ·   질주 SHIFT', CW / 2, 90, COL.gray, 11, 1, 'center');
-    T('사물 옆에서 SPACE - 그 사물로 위장 (체력 소모)', CW / 2, 101, COL.gray, 11, 1, 'center');
-    T('화분 쿠션 정수기 복사기 골프백 흉상', CW / 2, 112, COL.lime, 11, 1, 'center');
-    T('빨간 도장 서류는 줍지 말 것', CW / 2, 123, COL.orange, 11, 1, 'center');
-    T('최고점수 ' + String(G.best).padStart(6, '0'), CW / 2, 140, COL.yellow, 11, 1, 'center');
-    if (((G.anim * 2) | 0) % 2 === 0) T('ENTER - 출근하기', CW / 2, 176, COL.green, 11, 1, 'center');
+    T('상사 피하기', CW / 2, RY(4, 18), COL.navy, 18, 1, 'center');
+    T('OFFICE  ESCAPE', CW / 2, RY(6, 9), COL.dim, 9, 1, 'center');
+    T('5층 영업부에서 1층 로비까지 탈출하라', CW / 2, RY(8, 14), COL.white, 14, 1, 'center');
+    T('층마다 서류를 모두 챙겨야 계단 문이 열린다', CW / 2, RY(10, 11), COL.gray, 11, 1, 'center');
+    T('이동 WASD/방향키   ·   질주 SHIFT', CW / 2, RY(12, 11), COL.gray, 11, 1, 'center');
+    T('사물 옆에서 SPACE - 그 사물로 위장 (체력 소모)', CW / 2, RY(13, 11), COL.gray, 11, 1, 'center');
+    T('화분 쿠션 정수기 복사기 골프백 흉상', CW / 2, RY(14, 11), COL.lime, 11, 1, 'center');
+    T('빨간 도장 서류는 줍지 말 것', CW / 2, RY(15, 11), COL.orange, 11, 1, 'center');
+    T('최고점수 ' + String(G.best).padStart(6, '0'), CW / 2, RY(17, 11), COL.yellow, 11, 1, 'center');
+    keyHint('ENTER - 퇴근하기', RY(21, 11), COL.green);
+  }
+
+  /** 다음 진행 키 안내 — 항상 보이게 두고 밑줄로만 강조한다 */
+  function keyHint(label, y, color) {
+    const c = color || COL.green;
+    const w = TW(label, 11);
+    T(label, CW / 2, y, c, 11, 1, 'center');
+    ctx.fillStyle = c;
+    ctx.globalAlpha = 0.35 + 0.35 * Math.abs(Math.sin(G.anim * 3));
+    ctx.fillRect(Math.round(CW / 2 - w / 2), Math.round(y + 6), w, 1);
+    ctx.globalAlpha = 1;
   }
 
   function drawIntro() {
     dim(0.84);
     const f = G.floor;
-    panel(30, 70, CW - 60, 86, COL.hudLine);
-    T(f.name, CW / 2, 80, COL.navy, 14, 1, 'center');
-    T(f.sub, CW / 2, 96, COL.gray, 11, 1, 'center');
-    ctx.fillStyle = COL.hudLine; ctx.fillRect(44, 110, CW - 88, 1);
-    T('사내 소문', CW / 2, 115, COL.orange, 9, 1, 'center');
-    T(G.rumor, CW / 2, 127, COL.gray, 11, 1, 'center');
-    T('서류 ' + G.quota + '장 · 상사 ' + G.bosses.length + '명', CW / 2, 141, COL.dim, 9, 1, 'center');
-    if (G.stateTimer > 0.5 && ((G.anim * 2) | 0) % 2 === 0) T('아무 키나 눌러 시작', CW / 2, 166, COL.lime, 11, 1, 'center');
+    panel(30, 64, CW - 60, 88, COL.hudLine);
+    T(f.name, CW / 2, RY(9, 14), COL.navy, 14, 1, 'center');
+    T(f.sub, CW / 2, RY(11, 11), COL.gray, 11, 1, 'center');
+    ctx.fillStyle = COL.hudLine; ctx.fillRect(44, 104, CW - 88, 1);
+    T('사내 소문', CW / 2, RY(13, 9), COL.orange, 9, 1, 'center');
+    T(G.rumor, CW / 2, RY(15, 11), COL.gray, 11, 1, 'center');
+    T('서류 ' + G.quota + '장 · 상사 ' + G.bosses.length + '명', CW / 2, RY(17, 9), COL.dim, 9, 1, 'center');
+    if (G.stateTimer > 0.5) keyHint('아무 키나 눌러 시작', RY(20, 11), COL.lime);
   }
 
   function drawCaught() {
     dim(0.62);
-    T('들켰다!', CW / 2, 74, COL.red, 18, 1, 'center');
+    T('들켰다!', CW / 2, RY(8, 18), COL.red, 18, 1, 'center');
     const w = Math.max(TW(G.catchLine, 11), TW(G.catchName, 9)) + 20;
-    panel(Math.round(CW / 2 - w / 2), 100, w, 32, COL.hudLine);
-    T(G.catchName, CW / 2, 106, COL.orange, 9, 1, 'center');
-    T('"' + G.catchLine + '"', CW / 2, 118, COL.navy, 11, 1, 'center');
-    if (G.stateTimer > 0.9) T(G.lives > 0 ? '남은 기회 ' + G.lives : '더는 버틸 수 없다...', CW / 2, 146, COL.gray, 11, 1, 'center');
+    panel(Math.round(CW / 2 - w / 2), 96, w, 32, COL.hudLine);
+    T(G.catchName, CW / 2, RY(13, 9), COL.orange, 9, 1, 'center');
+    T('"' + G.catchLine + '"', CW / 2, RY(14, 11), COL.navy, 11, 1, 'center');
+    if (G.stateTimer > 0.9) T(G.lives > 0 ? '남은 기회 ' + G.lives : '더는 버틸 수 없다...', CW / 2, RY(17, 11), COL.gray, 11, 1, 'center');
   }
 
   function drawClear() {
     dim(0.66);
-    T('층 돌파!', CW / 2, 66, COL.green, 18, 1, 'center');
-    T(G.floor.name + ' 탈출 성공', CW / 2, 92, COL.navy, 14, 1, 'center');
-    T('클리어 보너스   +500', CW / 2, 110, COL.gray, 11, 1, 'center');
-    T('시간 보너스     +' + G.lastBonus, CW / 2, 121, COL.gray, 11, 1, 'center');
-    T('점수 ' + String(G.score).padStart(6, '0'), CW / 2, 138, COL.yellow, 11, 1, 'center');
-    if (G.stateTimer > 1.2 && ((G.anim * 2) | 0) % 2 === 0) {
-      const next = FLOORS[G.floorIdx].final ? '로비 탈출' : FLOORS[G.floorIdx + 1].name;
-      T('ENTER - ' + next, CW / 2, 160, COL.cyan, 11, 1, 'center');
+    T('층 돌파!', CW / 2, RY(7, 18), COL.green, 18, 1, 'center');
+    T(G.floor.name + ' 탈출 성공', CW / 2, RY(10, 14), COL.navy, 14, 1, 'center');
+    T('클리어 보너스   +500', CW / 2, RY(12, 11), COL.gray, 11, 1, 'center');
+    T('시간 보너스     +' + G.lastBonus, CW / 2, RY(13, 11), COL.gray, 11, 1, 'center');
+    T('점수 ' + String(G.score).padStart(6, '0'), CW / 2, RY(15, 11), COL.yellow, 11, 1, 'center');
+    if (G.stateTimer > 1.2) {
+      const next = FLOORS[G.floorIdx].final ? '1F 로비로 내려가기' : FLOORS[G.floorIdx + 1].name + ' 으로';
+      keyHint('ENTER - ' + next, RY(18, 11), COL.cyan);
     }
   }
 
   function drawEnding() {
     sheetBackdrop();
-    T('탈출 성공', CW / 2, 38, COL.green, 18, 1, 'center');
-    T(nickName() + ' 님, 회전문을 넘었다. 오늘은 정시 퇴근이다.', CW / 2, 62, COL.navy, 11, 1, 'center');
-    T('총 점수  ' + String(G.score).padStart(6, '0'), CW / 2, 82, COL.yellow, 14, 1, 'center');
-    T('총 소요  ' + Math.floor(G.totalTime) + '초', CW / 2, 100, COL.gray, 11, 1, 'center');
-    T('위장으로 속인 횟수  ' + G.dgWins + '회', CW / 2, 111, COL.lime, 11, 1, 'center');
-    ctx.fillStyle = COL.hudLine; ctx.fillRect(60, 126, CW - 120, 1);
-    T('하지만 내일도 출근이다', CW / 2, 131, COL.orange, 11, 1, 'center');
-    if (G.stateTimer > 1.2 && ((G.anim * 2) | 0) % 2 === 0) T('ENTER - 야근 ' + (G.cycle + 1) + '회차', CW / 2, 148, COL.cyan, 11, 1, 'center');
-    const fake = { x: CW / 2 + Math.sin(G.anim * 1.4) * 40, y: 240, dir: 'side', flip: Math.cos(G.anim * 1.4) < 0, frame: ((G.anim * 9) | 0) % 2 };
-    drawShadowOval(fake.x, fake.y, 9);
-    drawActor(SPR.player, fake);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillRect(0, 0, CW, CH);
+    drawResultCard(true);
+    if (G.stateTimer > 1.2) keyHint('ENTER - 야근 ' + (G.cycle + 1) + '회차 도전', RY(27, 11), COL.cyan);
   }
 
   function drawOver() {
-    dim(0.78);
-    T('야근 확정', CW / 2, 62, COL.red, 18, 1, 'center');
-    T(nickName() + ' · 도달 층  ' + G.floor.name, CW / 2, 88, COL.navy, 11, 1, 'center');
-    T('최종 점수  ' + String(G.score).padStart(6, '0'), CW / 2, 104, COL.yellow, 14, 1, 'center');
-    T('최고 점수  ' + String(G.best).padStart(6, '0'), CW / 2, 122, COL.gray, 11, 1, 'center');
-    if (G.stateTimer > 0.8 && ((G.anim * 2) | 0) % 2 === 0) T('ENTER - 다시 도전', CW / 2, 144, COL.green, 11, 1, 'center');
+    // 성적표는 화면 전체를 덮는다 — HUD 가 겹치면 캡처했을 때 지저분하다
+    ctx.fillStyle = 'rgba(255,255,255,0.93)';
+    ctx.fillRect(0, 0, CW, CH);
+    drawResultCard(false);
+    if (G.stateTimer > 0.8) keyHint('ENTER - 처음부터 다시 하기', RY(27, 11), COL.green);
+  }
+
+  /** 스크린샷 찍어 자랑하라고 만든 성적표 — 표정 + 큰 점수 + 촌평 */
+  function drawResultCard(cleared) {
+    const v = G.verdict || { title: '퇴근 실패', face: 'blank', line: '', cleared: false, newBest: false };
+    const accent = cleared ? COL.green : COL.red;
+
+    T('상사 피하기 · 오늘의 퇴근 성적표', CW / 2, RY(2, 9), COL.dim, 9, 1, 'center');
+
+    // 표정 — 16px 스프라이트를 3배로 키운다
+    const face = FACES[v.face] || FACES.blank;
+    const fs = 3;
+    const fx = Math.round(CW / 2 - (face.w * fs) / 2);
+    const fy = 32;
+    if (v.face === 'legend') {
+      const cs = 2;
+      ctx.drawImage(SPR_CROWN.canvas, Math.round(CW / 2 - (SPR_CROWN.w * cs) / 2), fy - SPR_CROWN.h * cs - 1,
+        SPR_CROWN.w * cs, SPR_CROWN.h * cs);
+    }
+    ctx.drawImage(face.canvas, fx, fy, face.w * fs, face.h * fs);
+
+    T(v.title, CW / 2, RY(12, 18), accent, 18, 1, 'center');
+    T(v.line, CW / 2, RY(14, 11), COL.gray, 11, 1, 'center');
+
+    ctx.fillStyle = COL.hudLine; ctx.fillRect(56, 128, CW - 112, 1);
+
+    T('최종 점수', CW / 2, RY(17, 9), COL.dim, 9, 1, 'center');
+    // 점수는 캡처했을 때 한눈에 들어오도록 크게
+    T(G.score.toLocaleString(), CW / 2, RY(19, 30) - 3, COL.navy, 30, 1, 'center');
+
+    const sub = nickName() + ' · ' + (cleared ? '1F 로비 탈출' : G.floor.name + '에서 야근') +
+      ' · 최고 ' + G.best.toLocaleString();
+    T(sub, CW / 2, RY(22, 9), COL.gray, 9, 1, 'center');
+    if (v.newBest) T('신기록 달성', CW / 2, RY(23, 9), COL.orange, 9, 1, 'center');
+    T('이 화면을 캡처해서 친구에게 보내보세요', CW / 2, RY(24, 9), COL.dim, 9, 1, 'center');
   }
 
   function drawPause() {
     dim(0.6);
-    T('일시정지', CW / 2, 100, COL.navy, 14, 1, 'center');
-    T('P 또는 ENTER 로 계속', CW / 2, 118, COL.gray, 11, 1, 'center');
-    T('M - 음소거 전환', CW / 2, 129, COL.dim, 9, 1, 'center');
+    T('일시정지', CW / 2, RY(12, 14), COL.navy, 14, 1, 'center');
+    T('P 또는 ENTER 로 계속', CW / 2, RY(14, 11), COL.gray, 11, 1, 'center');
+    T('M - 음소거 전환', CW / 2, RY(15, 9), COL.dim, 9, 1, 'center');
   }
 
   /* ---------------- 렌더 ---------------- */
@@ -1466,7 +1536,7 @@
     if (elNickBox) {
       elNickBox.classList.toggle('on', showNick);
       if (showNick) {
-        placeOverlay(elNickBox, CW / 2 - 32, 154, 64, 8);
+        placeOverlay(elNickBox, CW / 2 - 32, RY(19, 11) - 2, 64, 8);
         elNick.style.width = Math.round(64 * SCALE) + 'px';
         elNick.style.height = Math.round(8 * SCALE) + 'px';
         elNick.style.fontSize = Math.round(5 * SCALE) + 'px';
@@ -1475,9 +1545,9 @@
     if (elShareBox) {
       elShareBox.classList.toggle('on', showShare);
       if (showShare) {
-        placeOverlay(elShareBox, CW / 2 - 40, s === 'over' ? 162 : 166, 80, 0);
-        elShareBtn.style.height = Math.round(10 * SCALE) + 'px';
-        elShareBtn.style.width = Math.round(80 * SCALE) + 'px';
+        placeOverlay(elShareBox, CW / 2 - 50, 200, 100, 0);
+        elShareBtn.style.height = Math.round(8 * SCALE) + 'px';
+        elShareBtn.style.width = Math.round(100 * SCALE) + 'px';
         elShareBtn.style.fontSize = Math.round(5 * SCALE) + 'px';
         elShareMsg.style.fontSize = Math.round(4.5 * SCALE) + 'px';
       }
@@ -1494,12 +1564,13 @@
   }
 
   function shareText() {
-    const cleared = G.state === 'ending';
-    return '[상사 피하기 · OFFICE ESCAPE]\n' +
-      nickName() + ' — ' +
-      (cleared ? '로비 탈출 성공! 정시 퇴근 쟁취' : G.floor.name + '에서 야근 확정') + '\n' +
-      '최종 점수 ' + G.score.toLocaleString() + '점 (최고 ' + G.best.toLocaleString() + '점)\n' +
-      '나도 퇴근해보기 → ' + shareUrl();
+    const v = G.verdict || { title: '퇴근 실패', line: '' };
+    return '오늘 칼퇴 도전?\n' +
+      '[상사 피하기 · OFFICE ESCAPE]\n\n' +
+      nickName() + ' — ' + v.title + '\n' +
+      (v.line ? '"' + v.line + '"\n' : '') +
+      '최종 점수 ' + G.score.toLocaleString() + '점\n\n' +
+      '나도 해보기 → ' + shareUrl();
   }
 
   function toast(t) { if (elShareMsg) elShareMsg.textContent = t; }

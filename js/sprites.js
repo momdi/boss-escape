@@ -436,3 +436,121 @@ const SPR_HEART_OFF = makeSprite([
   '..ttt..',
   '...t...',
 ], { t: '#3a3f55' });
+
+/* ================= 결과 화면 표정 (16 x 16) =================
+   위/아래 윤곽은 고정이고 가운데 7행(눈·입)만 표정마다 바꾼다. */
+const FACE_PAL = {
+  s: '#ffcd75',   // 얼굴
+  k: '#1a1c2c',   // 윤곽 / 눈
+  r: '#c0392b',   // 입 / 혀
+  n: '#41a6f6',   // 눈물 / 식은땀
+  w: '#ffffff',   // 반짝이는 눈
+  g: '#22242f',   // 선글라스
+};
+
+function makeFace(mid) {
+  const rows = [
+    '.....kkkkkk.....',
+    '...kksssssskk...',
+    '..kssssssssssk..',
+    '.kssssssssssssk.',
+  ];
+  for (let i = 0; i < mid.length; i++) rows.push('k' + mid[i] + 'k');
+  rows.push('.kssssssssssssk.');
+  rows.push('..kssssssssssk..');
+  rows.push('...kksssssskk...');
+  rows.push('.....kkkkkk.....');
+  return makeSprite(rows, FACE_PAL);
+}
+
+const FLAT = 'ssssssssssssss';
+
+const FACES = {
+  // 즉사 — X 자 눈에 혀를 빼물었다
+  dead: makeFace([
+    FLAT,
+    'ssksksssksksss',
+    'ssskssssskssss',
+    'ssksksssksksss',
+    FLAT,
+    'ssssrrrrrrssss',
+    'ssssssrrssssss',
+  ]),
+  // 통곡 — 눈물 두 줄기
+  cry: makeFace([
+    FLAT,
+    'sskkssssskksss',
+    'sskkssssskksss',
+    'ssnsssssssnsss',
+    'ssnsssssssnsss',
+    'sssssrrrrsssss',
+    FLAT,
+  ]),
+  // 식은땀 — 애매하게 살아남음
+  sweat: makeFace([
+    FLAT,
+    'sskkssssskksss',
+    'sskkssssskksss',
+    'sssssssssssssn',
+    'ssssssssssssns',
+    'sssssrsrssssss',
+    FLAT,
+  ]),
+  // 영혼 가출 — 점 눈에 일자 입
+  blank: makeFace([
+    FLAT,
+    FLAT,
+    'ssskssssskssss',
+    FLAT,
+    FLAT,
+    'ssssskkkksssss',
+    FLAT,
+  ]),
+  // 씨익 — 될 뻔했다
+  smirk: makeFace([
+    FLAT,
+    'sskkssssskksss',
+    FLAT,
+    FLAT,
+    'ssssssssrsssss',
+    'sssssrrrssssss',
+    FLAT,
+  ]),
+  // 뿌듯 — 눈웃음
+  proud: makeFace([
+    FLAT,
+    'ssksksssksksss',
+    'ssskssssskssss',
+    FLAT,
+    'ssssrrrrrrssss',
+    'sssssrrrrsssss',
+    FLAT,
+  ]),
+  // 선글라스 — 프로의 여유
+  cool: makeFace([
+    FLAT,
+    'sggggggggggggs',
+    'sggggsgssggggs',
+    'sggggssssggggs',
+    FLAT,
+    'ssssrrrrrsssss',
+    FLAT,
+  ]),
+  // 전설 — 눈이 빛난다
+  legend: makeFace([
+    FLAT,
+    'sswwssssswwsss',
+    'sswwssssswwsss',
+    FLAT,
+    'sssrrrrrrrrsss',
+    'ssssrrrrrrssss',
+    'sssssrrrrsssss',
+  ]),
+};
+
+const SPR_CROWN = makeSprite([
+  'y.y.y.y',
+  'yyyyyyy',
+  'yWyyyWy',
+  'yyyyyyy',
+], { y: '#e0a92c', W: '#ffe08a' });
