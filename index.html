@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026_영업본부_월간실적_v7_final_최종수정.xlsx</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23217346'/%3E%3Ctext x='16' y='23' font-family='Arial' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EX%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
+<link rel="stylesheet" href="css/style.css?v=15">
+</head>
+<body>
+  <div id="xl">
+
+    <div class="xl-titlebar">
+      <span class="xl-appicon">X</span>
+      <span class="xl-filename">2026_영업본부_월간실적_v7_final_최종수정.xlsx</span>
+      <span class="xl-saved">- 저장됨</span>
+      <span class="xl-spacer"></span>
+      <span class="xl-winbtn">—</span>
+      <span class="xl-winbtn">□</span>
+      <span class="xl-winbtn xl-close">✕</span>
+    </div>
+
+    <div class="xl-menubar">
+      <span class="xl-file-tab">파일</span>
+      <span>홈</span>
+      <span class="on">삽입</span>
+      <span>페이지 레이아웃</span>
+      <span>수식</span>
+      <span>데이터</span>
+      <span>검토</span>
+      <span>보기</span>
+      <span>도움말</span>
+      <span class="xl-spacer"></span>
+      <span class="xl-mute" id="mutebtn" title="소리 켜짐 / 끄기 (M)"><b id="muteico">◂))</b></span>
+      <span class="xl-share">공유</span>
+    </div>
+
+    <div class="xl-ribbon">
+      <div class="xl-grp">
+        <div class="xl-grp-items">
+          <div class="xl-btn xl-big"><span class="xl-ico">📋</span><em>붙여넣기</em></div>
+        </div>
+        <div class="xl-grp-label">클립보드</div>
+      </div>
+      <div class="xl-grp">
+        <div class="xl-grp-items xl-col">
+          <div class="xl-row">
+            <span class="xl-fontname">맑은 고딕</span>
+            <span class="xl-fontsize">11</span>
+          </div>
+          <div class="xl-row">
+            <span class="xl-sq xl-b">가</span>
+            <span class="xl-sq xl-i">가</span>
+            <span class="xl-sq xl-u">가</span>
+            <span class="xl-sq">田</span>
+            <span class="xl-sq">◇</span>
+            <span class="xl-sq">A</span>
+          </div>
+        </div>
+        <div class="xl-grp-label">글꼴</div>
+      </div>
+      <div class="xl-grp">
+        <div class="xl-grp-items xl-col">
+          <div class="xl-row">
+            <span class="xl-sq">≡</span><span class="xl-sq">≡</span><span class="xl-sq">≡</span>
+            <span class="xl-sq">↕</span><span class="xl-sq">⇥</span>
+          </div>
+          <div class="xl-row">
+            <span class="xl-sq">⇤</span><span class="xl-sq">⇥</span>
+            <span class="xl-wide">병합하고 가운데 맞춤</span>
+          </div>
+        </div>
+        <div class="xl-grp-label">맞춤</div>
+      </div>
+      <div class="xl-grp">
+        <div class="xl-grp-items xl-col">
+          <div class="xl-row"><span class="xl-wide">회계 ▾</span></div>
+          <div class="xl-row">
+            <span class="xl-sq">₩</span><span class="xl-sq">%</span><span class="xl-sq">,</span>
+            <span class="xl-sq">.00</span><span class="xl-sq">.0</span>
+          </div>
+        </div>
+        <div class="xl-grp-label">표시 형식</div>
+      </div>
+      <div class="xl-grp xl-hide-sm">
+        <div class="xl-grp-items">
+          <div class="xl-btn xl-big"><span class="xl-ico">📊</span><em>차트</em></div>
+          <div class="xl-btn xl-big"><span class="xl-ico">🔢</span><em>피벗</em></div>
+        </div>
+        <div class="xl-grp-label">표</div>
+      </div>
+      <div class="xl-grp xl-hide-sm">
+        <div class="xl-grp-items">
+          <div class="xl-btn xl-big"><span class="xl-ico">Σ</span><em>자동 합계</em></div>
+          <div class="xl-btn xl-big"><span class="xl-ico">🔎</span><em>찾기</em></div>
+        </div>
+        <div class="xl-grp-label">편집</div>
+      </div>
+    </div>
+
+    <div class="xl-formulabar">
+      <span class="xl-namebox" id="namebox">M14</span>
+      <span class="xl-divider"></span>
+      <span class="xl-fx">fx</span>
+      <span class="xl-formula" id="formula">=SUMIFS(실적!$F:$F,실적!$B:$B,$B14,실적!$D:$D,M$3)/VLOOKUP($B14,목표!$B:$H,6,0)</span>
+    </div>
+
+    <div class="xl-sheetview" id="sheetview">
+      <div class="xl-corner"></div>
+      <div class="xl-colhead" id="colhead"></div>
+      <div class="xl-rowhead" id="rowhead"></div>
+      <div class="xl-grid" id="grid">
+        <div class="xl-cells" id="cells"></div>
+        <div class="xl-selection" id="selection"></div>
+
+        <!-- 일시정지 = 셀 메모 (실은 계속하기 안내) -->
+        <div id="xlnote">
+          <b>김성태 부장:</b>
+          자리 비운 김에 M열 수식 한 번만 봐줘요.<br>
+          어차피 오늘 퇴근 못 하잖아, 그치?
+          <span class="xlnote-foot">P 또는 Enter — 검토 계속</span>
+        </div>
+
+        <!-- 차트 개체 (실은 게임) -->
+        <div id="chartobj">
+          <div class="xl-chart-title">월별 목표 달성률 추이 (Q3)</div>
+          <div id="wrap">
+            <canvas id="game"></canvas>
+            <div id="scanlines"></div>
+
+            <!-- 사원명(닉네임) 입력 — 셀 입력처럼 보이게 -->
+            <div id="nickbox">
+              <input id="nick" type="text" maxlength="8" placeholder="사원명" autocomplete="off" spellcheck="false">
+            </div>
+
+            <!-- 결과 공유 -->
+            <div id="sharebox">
+              <button id="sharebtn" type="button">카톡으로 결과 공유</button>
+              <span id="sharemsg"></span>
+            </div>
+          </div>
+          <span class="xl-handle h-nw"></span>
+          <span class="xl-handle h-ne"></span>
+          <span class="xl-handle h-sw"></span>
+          <span class="xl-handle h-se"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="xl-sheettabs">
+      <span class="xl-tabarrow">◀</span><span class="xl-tabarrow">▶</span>
+      <span class="xl-stab">요약</span>
+      <span class="xl-stab on">실적</span>
+      <span class="xl-stab">목표</span>
+      <span class="xl-stab">거래처</span>
+      <span class="xl-stab">RAW_DATA</span>
+      <span class="xl-stab">Sheet1</span>
+      <span class="xl-stab xl-plus">+</span>
+    </div>
+
+    <div class="xl-status">
+      <span id="statmode">준비</span>
+      <span class="xl-divider"></span>
+      <span id="hint">WASD 이동 · SHIFT 질주 · SPACE 사물로 위장 · P 일시정지 · M 음소거 · <b>`</b> 화면 위장</span>
+      <span class="xl-spacer"></span>
+      <span id="statcalc">평균: 87.4%　개수: 30　합계: 2,622,400</span>
+      <span class="xl-divider"></span>
+      <span class="xl-zoom">— ⎯⎯●⎯⎯ + 100%</span>
+    </div>
+
+  </div>
+
+  <script src="js/text.js?v=15"></script>
+  <script src="js/sprites.js?v=15"></script>
+  <script src="js/data.js?v=15"></script>
+  <script src="js/audio.js?v=15"></script>
+  <script src="js/shell.js?v=15"></script>
+  <script src="js/game.js?v=15"></script>
+</body>
+</html>
