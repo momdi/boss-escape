@@ -3,6 +3,24 @@
    대충 보면 그냥 월간 실적 스프레드시트.
    =========================================================== */
 
+/* Pretendard 자체 호스팅 (외부 CDN 의존 제거)
+   KS X 1001 서브셋 — 게임에 쓰이는 한글 587자 전부 포함 확인됨
+   SIL Open Font License 1.1 · github.com/orioncactus/pretendard */
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/Pretendard-Regular.subset.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/Pretendard-Medium.subset.woff2') format('woff2');
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {

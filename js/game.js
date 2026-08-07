@@ -1485,13 +1485,21 @@
     if (s !== overState) { overState = s; if (elShareMsg) elShareMsg.textContent = ''; }
   }
 
+  function shareUrl() {
+    // 캐시 무효화용 ?v= / ?r= 같은 쿼리스트링은 빼고 깨끗한 주소만 공유한다
+    if (location.protocol === 'http:' || location.protocol === 'https:') {
+      return location.origin + location.pathname.replace(/index\.html$/, '');
+    }
+    return location.href.split(/[?#]/)[0];
+  }
+
   function shareText() {
     const cleared = G.state === 'ending';
     return '[상사 피하기 · OFFICE ESCAPE]\n' +
       nickName() + ' — ' +
       (cleared ? '로비 탈출 성공! 정시 퇴근 쟁취' : G.floor.name + '에서 야근 확정') + '\n' +
       '최종 점수 ' + G.score.toLocaleString() + '점 (최고 ' + G.best.toLocaleString() + '점)\n' +
-      '나도 퇴근해보기 → ' + location.href;
+      '나도 퇴근해보기 → ' + shareUrl();
   }
 
   function toast(t) { if (elShareMsg) elShareMsg.textContent = t; }

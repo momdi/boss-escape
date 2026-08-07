@@ -11,7 +11,7 @@ const Txt = (function () {
   const wCache = new Map();
   const MAX_CACHE = 3000;
 
-  const FAM = 'Pretendard, "Pretendard Variable", "맑은 고딕", "Malgun Gothic", ' +
+  const FAM = 'Pretendard, "맑은 고딕", "Malgun Gothic", ' +
               '"Apple SD Gothic Neo", -apple-system, sans-serif';
 
   /* 호출부는 예전 도트 폰트 기준(7/9/11/14)으로 크기를 넘긴다.
