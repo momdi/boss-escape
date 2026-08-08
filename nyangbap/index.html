@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>냥밥 — 오늘의 할 일</title>
+<link rel="icon" href="favicon.svg">
+<link rel="preload" href="fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body>
+
+<div id="app">
+
+  <header class="hd">
+    <span class="hd-date" id="hdDate">2024-05-16 목요일</span>
+    <span class="hd-div"></span>
+    <button class="hd-food" id="hdFood" type="button" title="밥그릇에 밥 담기">
+      <span class="hd-food-txt">
+        <span class="hd-food-label">밥알</span>
+        <span class="hd-food-num" id="hdKibble">000</span>
+      </span>
+      <span class="hd-food-bowl" id="hdBowlIcon"></span>
+      <span class="hd-food-star" id="hdSpecial" hidden>★<b id="hdSpecialNum">0</b></span>
+    </button>
+  </header>
+
+  <!-- ===== 집 ===== -->
+  <section class="scene" id="scene">
+    <canvas id="room"></canvas>
+    <div class="scene-hint" id="sceneHint">밥그릇을 눌러 밥을 담아 주세요</div>
+    <div class="scene-acts">
+      <button class="sbtn" id="giftBtn" type="button" aria-label="선물 주기" hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 7h12v7H2z"/><path d="M1 4h14v3H1z"/><path d="M7 4h2v10H7z" class="cut"/><path d="M5 1h2v3H5zM9 1h2v3H9z"/></svg>
+      </button>
+      <button class="sbtn" id="camBtn" type="button" aria-label="사진 찍기" disabled>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 4h3l1-2h6l1 2h3v10H1z"/><circle cx="8" cy="9" r="3" class="cut"/></svg>
+      </button>
+    </div>
+    <div class="flash" id="flash"></div>
+  </section>
+
+  <main class="page" id="pageHome">
+    <h1 class="list-title">오늘의 할 일</h1>
+    <ul class="todos" id="todoList"></ul>
+    <form class="add" id="addForm">
+      <input id="addInput" type="text" maxlength="24" placeholder="할 일 추가" autocomplete="off" spellcheck="false">
+      <button type="submit" aria-label="추가">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 2h2v12H7z"/><path d="M2 7h12v2H2z"/></svg>
+      </button>
+    </form>
+  </main>
+
+  <!-- ===== 냥이 도감 ===== -->
+  <main class="page" id="pageAlbum" hidden>
+    <h1 class="list-title">냥이 도감</h1>
+    <p class="page-sub" id="albumCount">0 / 0 마리</p>
+    <div class="grid" id="albumGrid"></div>
+  </main>
+
+  <!-- ===== 상점 ===== -->
+  <main class="page" id="pageShop" hidden>
+    <h1 class="list-title">상점</h1>
+    <div class="shop-tabs">
+      <button class="on" data-shop="bowl" type="button">밥그릇</button>
+      <button data-shop="gift" type="button">선물</button>
+    </div>
+    <div class="shop-list" id="shopList"></div>
+  </main>
+
+  <nav class="tabs" id="tabs">
+    <button class="on" data-tab="home" type="button">집</button>
+    <button data-tab="album" type="button">냥이 도감</button>
+    <button data-tab="shop" type="button">상점</button>
+  </nav>
+
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<div class="sheet-wrap" id="sheetWrap" hidden>
+  <div class="sheet-dim" id="sheetDim"></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+</div>
+
+<script src="js/sprites.js?v=2"></script>
+<script src="js/data.js?v=2"></script>
+<script src="js/state.js?v=2"></script>
+<script src="js/scene.js?v=2"></script>
+<script src="js/ui.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
+</body>
+</html>
