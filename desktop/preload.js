@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('desk', {
   leftCat: function (b) { ipcRenderer.send('cat:left', b); },
   onLeft: function (fn) { ipcRenderer.on('left', function (e, b) { fn(b); }); },
   onShoot: function (fn) { ipcRenderer.on('shoot', function (e, id) { fn(id); }); },
+  onSendAway: function (fn) { ipcRenderer.on('sendAway', function (e, id) { fn(id); }); },
   savePhoto: function (p) { ipcRenderer.send('photo:save', p); },
   onPhoto: function (fn) { ipcRenderer.on('photo', function (e, p) { fn(p); }); },
   bowlMenu: function () { ipcRenderer.send('bowl:menu'); },

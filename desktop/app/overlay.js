@@ -717,6 +717,13 @@ function play(name) {
 if (window.desk) {
   window.desk.onNotice(showNotice);
   window.desk.onShoot(shoot);
+  window.desk.onSendAway(function (id) {
+    const list = id === '*' ? visitors.slice()
+      : visitors.filter(function (v) { return v.id === id; });
+    list.forEach(function (c) {
+      if (c.state !== 'leave') startLeave(c);
+    });
+  });
   window.desk.onGiftDone(function (p) {
     if (p && p.summon) {
       spawn(pickBreed());

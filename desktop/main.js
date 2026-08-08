@@ -183,6 +183,9 @@ ipcMain.on('cat:menu', function (e, cat) {
     { label: '사진 찍기', click: function () {
         if (overlay && !overlay.isDestroyed()) overlay.webContents.send('shoot', cat.id);
       } },
+    { label: '보내주기', click: function () {
+        if (overlay && !overlay.isDestroyed()) overlay.webContents.send('sendAway', cat.id);
+      } },
     { type: 'separator' },
   ];
   if (!gifts.length) {
@@ -221,6 +224,9 @@ ipcMain.on('bowl:menu', function () {
     { label: '할 일 창 열기', click: function () { createMemo(); } },
     { label: '냥이 부르기', click: function () {
         if (overlay && !overlay.isDestroyed()) overlay.webContents.send('summon');
+      } },
+    { label: '모두 보내주기', click: function () {
+        if (overlay && !overlay.isDestroyed()) overlay.webContents.send('sendAway', '*');
       } },
     { label: '소리', type: 'checkbox', checked: state.sound !== false,
       click: function () { state.sound = !state.sound; broadcast(); } },
