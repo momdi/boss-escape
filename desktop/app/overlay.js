@@ -4,8 +4,6 @@
    클릭을 받고, 나머지 영역은 뒤 창으로 클릭이 통과된다.
    =========================================================== */
 
-window.onerror = function (m, s, l, c) { console.log('ERR ' + m + ' @' + l + ':' + c); };
-
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 
@@ -121,7 +119,7 @@ function spawn(breed) {
     tx: bowl.x + side * standOff(breed, false),
     dir: left ? 1 : -1,
     state: 'enter', t: 0, trav: 0,
-    ate: 0, wants: 2 + Math.floor(Math.random() * 2),
+    ate: 0, wants: 1,          /* 한 마리가 한 알만 */
     rest: 55 + Math.random() * 70,             /* 한 번 오면 오래 머문다 */
     act: null, actT: 0, jump: 0,
     napping: false, waiting: false,
@@ -146,10 +144,11 @@ function update(dt) {
   spawnTimer -= dt;
   if (spawnTimer <= 0) {
     /* 아무도 없으면 조금 빨리, 이미 있으면 아주 느긋하게 */
+    const food = st && st.food && st.food.n > 0;
     spawnTimer = visitors.length === 0
-      ? 14 + Math.random() * 20
-      : 60 + Math.random() * 80;
-    if (st && st.food && st.food.n > 0 && visitors.length < 3) {
+      ? (food ? 8 + Math.random() * 12 : 30 + Math.random() * 40)
+      : (food ? 35 + Math.random() * 45 : 90 + Math.random() * 60);
+    if (visitors.length < 3 && (food || visitors.length === 0)) {
       spawn(pickBreed());
     }
   }
@@ -178,7 +177,7 @@ function update(dt) {
       c.trav += Math.abs(step);
       if (Math.abs(d) < 0.004) {
         c.x = c.tx;
-        c.state = grains > 0 ? 'eat' : 'rest';
+        c.state = (grains > 0 && c.ate < c.wants) ? 'eat' : 'rest';
         c.dir = c.x > bowl.x ? -1 : 1;
         c.waiting = c.state === 'rest';
         c.t = 0; c.bite = 0;
@@ -239,7 +238,9 @@ function update(dt) {
           play('meow');
           c.state = 'eat'; c.t = 0; c.bite = 0;
         }
-        c.rest = 9999;                   /* 기다리는 동안엔 안 떠난다 */
+        /* 밥을 기다리며 졸다가, 오래 안 오면 그냥 돌아간다 */
+        c.wait = (c.wait || 0) + dt;
+        if (c.wait > 100 + Math.random() * 60) { startLeave(c); c.t = 0; }
       } else {
         if (!c.napping && !c.actT && c.t > 5 && Math.random() < dt * 0.10) {
           c.napping = true;
@@ -263,6 +264,7 @@ function update(dt) {
 }
 
 function startLeave(c) {
+  c.wait = 0;
   play('bye');
   c.state = 'leave';
   c.napping = false; c.act = null; c.actT = 0; c.waiting = false;
@@ -704,7 +706,7 @@ function applyState(s) {
   if (typeof Sound !== 'undefined') Sound.setEnabled(s.sound !== false);
   if (!first && s.food && s.food.n > prevFood) {
     play('drop');
-    if (prevFood === 0 && visitors.length === 0) spawnTimer = Math.min(spawnTimer, 4);
+    if (prevFood === 0 && visitors.length < 3) spawnTimer = Math.min(spawnTimer, 5);
   }
 }
 

@@ -95,11 +95,8 @@ function createOverlay() {
   overlay.setAlwaysOnTop(true, 'screen-saver');
   overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   overlay.setIgnoreMouseEvents(true, { forward: true });   /* 기본은 클릭 통과 */
-  overlay.webContents.on('console-message', function (e, level, msg, line, src) {
-    console.log('[overlay]', msg, '(' + String(src).split('/').pop() + ':' + line + ')');
-  });
   overlay.webContents.on('render-process-gone', function (e, d) {
-    console.log('[overlay] GONE', JSON.stringify(d));
+    log('overlay gone', JSON.stringify(d));
   });
   overlay.loadFile(path.join(__dirname, 'app', 'overlay.html'));
 }
