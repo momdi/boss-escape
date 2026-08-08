@@ -15,14 +15,19 @@ const State = (function () {
   }
 
   function fresh() {
+    let lang = 'ko';
+    try { lang = /^ko/i.test(navigator.language || '') ? 'ko' : 'en'; } catch (e) { lang = 'ko'; }
     return {
-      v: 1,
+      v: 2,
       date: todayKey(),
+      lang: lang,
+      sound: true,
       kibble: 0,
       special: 0,
       todos: DEFAULT_TODOS.map(function (t, i) {
-        return { id: 't' + Date.now() + i, text: t.text, star: t.star, done: false };
+        return { id: 't' + Date.now() + i, def: i, text: t.text, star: t.star, done: false };
       }),
+      history: {},
       bonusGiven: false,
       allDoneGiven: false,
       bowl: 'bowl_basic',
@@ -58,11 +63,12 @@ const State = (function () {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) { /* 저장 공간 부족 */ }
   }
 
-  /** 날짜가 바뀌었으면 체크만 초기화한다 (도감 / 밥알은 유지) */
+  /** 날짜가 바뀌었으면 체크만 초기화한다 (도감 / 츄알은 유지) */
   function rollover() {
     const t = todayKey();
     if (s.date === t) return false;
     const doneCount = s.todos.filter(function (x) { return x.done; }).length;
+    stamp();
     s.streak = doneCount > 0 ? (s.streak || 0) + 1 : 0;
     s.todos.forEach(function (x) { x.done = false; });
     s.date = t;
@@ -70,6 +76,40 @@ const State = (function () {
     s.allDoneGiven = false;
     save();
     return true;
+  }
+
+  /** 오늘 달성 현황을 기록에 남긴다 */
+  function stamp() {
+    if (!s.history) s.history = {};
+    const done = s.todos.filter(function (x) { return x.done; }).length;
+    if (done <= 0) { delete s.history[s.date]; return; }
+    s.history[s.date] = { d: done, t: s.todos.length };
+  }
+
+  function history() { return s.history || {}; }
+
+  /** 오늘까지 이어진 연속 달성일 */
+  function streakDays() {
+    const h = s.history || {};
+    const d = new Date();
+    let n = 0;
+    for (let i = 0; i < 400; i++) {
+      const k = todayKey(d);
+      if (h[k] && h[k].d > 0) n++;
+      else if (i > 0) break;
+      d.setDate(d.getDate() - 1);
+    }
+    return n;
+  }
+
+  function setLang(l) {
+    s.lang = l === 'en' ? 'en' : 'ko';
+    emit({ type: 'lang' });
+  }
+
+  function setSound(on) {
+    s.sound = !!on;
+    emit({ type: 'sound' });
   }
 
   function on(fn) { listeners.push(fn); }
@@ -85,12 +125,14 @@ const State = (function () {
     if (!v) return null;
     const item = { id: 't' + Date.now() + Math.floor(Math.random() * 100), text: v, star: false, done: false };
     s.todos.push(item);
+    stamp();
     emit({ type: 'todos' });
     return item;
   }
 
   function removeTodo(id) {
     s.todos = s.todos.filter(function (x) { return x.id !== id; });
+    stamp();
     emit({ type: 'todos' });
   }
 
@@ -102,7 +144,7 @@ const State = (function () {
     const t = s.todos.find(function (x) { return x.id === id; });
     if (!t) return { ok: false };
     if (!t.star && starCount() >= RULES.maxStars) {
-      return { ok: false, reason: '특별한 할 일은 하루 ' + RULES.maxStars + '개까지예요' };
+      return { ok: false, reason: T.t('starMax', { n: RULES.maxStars }) };
     }
     t.star = !t.star;
     emit({ type: 'todos' });
@@ -130,16 +172,17 @@ const State = (function () {
     if (!s.bonusGiven && done >= RULES.bonusAt) {
       s.bonusGiven = true;
       gain.special += RULES.bonusSpecial;
-      gain.bonus = RULES.bonusAt + '개 달성! 특별한 밥 +' + RULES.bonusSpecial;
+      gain.bonus = T.t('bonusStreak', { n: RULES.bonusAt, b: RULES.bonusSpecial });
     }
     if (!s.allDoneGiven && s.todos.length >= 3 && done === s.todos.length) {
       s.allDoneGiven = true;
       gain.kibble += RULES.allDoneKibble;
-      gain.bonus = '오늘 할 일 전부 완료! 밥알 +' + RULES.allDoneKibble;
+      gain.bonus = T.t('bonusAll', { b: RULES.allDoneKibble });
     }
 
     s.kibble = Math.max(0, s.kibble + gain.kibble);
     s.special = Math.max(0, s.special + gain.special);
+    stamp();
     emit({ type: 'todos' });
     return { todo: t, gain: gain };
   }
@@ -156,16 +199,16 @@ const State = (function () {
   function feed(kind, amount) {
     const cap = capacity();
     const room = cap - s.food.n;
-    if (room <= 0) return { ok: false, reason: '밥그릇이 가득 찼어요' };
+    if (room <= 0) return { ok: false, reason: T.t('bowlFull') };
     let put = Math.min(room, amount);
     if (kind === 'special') {
       put = Math.min(put, s.special);
-      if (put <= 0) return { ok: false, reason: '특별한 밥이 없어요' };
+      if (put <= 0) return { ok: false, reason: T.t('noSpecial') };
       s.special -= put;
       s.food.special += put;
     } else {
       put = Math.min(put, s.kibble);
-      if (put <= 0) return { ok: false, reason: '밥알이 없어요' };
+      if (put <= 0) return { ok: false, reason: T.t('noKibble') };
       s.kibble -= put;
     }
     s.food.n += put;
@@ -193,8 +236,8 @@ const State = (function () {
     const gift = GIFT_BY_ID[id];
     const item = bowl || gift;
     if (!item) return { ok: false };
-    if (bowl && s.bowls.indexOf(id) >= 0) return { ok: false, reason: '이미 가지고 있어요' };
-    if (s.kibble < item.price) return { ok: false, reason: '밥알이 모자라요' };
+    if (bowl && s.bowls.indexOf(id) >= 0) return { ok: false, reason: T.t('already') };
+    if (s.kibble < item.price) return { ok: false, reason: T.t('notEnough') };
     s.kibble -= item.price;
     if (bowl) {
       s.bowls.push(id);
@@ -272,7 +315,11 @@ const State = (function () {
   function metCount() { return Object.keys(s.cats).length; }
 
   function reset() {
+    const lang = s ? s.lang : 'ko';
+    const sound = s ? s.sound : true;
     s = fresh();
+    s.lang = lang;
+    s.sound = sound;
     emit({ type: 'reset' });
   }
 
@@ -281,6 +328,10 @@ const State = (function () {
     get data() { return s; },
     todayKey: todayKey,
     rollover: rollover,
+    history: history,
+    streakDays: streakDays,
+    setLang: setLang,
+    setSound: setSound,
     on: on,
     emit: emit,
     addTodo: addTodo,

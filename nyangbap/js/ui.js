@@ -1,5 +1,5 @@
 /* ===========================================================
-   냥밥 — 화면 그리기 / 시트
+   츄두리스트 — 화면 그리기 / 시트
    =========================================================== */
 
 const UI = (function () {
@@ -8,6 +8,7 @@ const UI = (function () {
   const el = {};
   let toastTimer = 0;
   let shopTab = 'bowl';
+  let calCursor = null; // {y, m}
 
   const ICON = {
     check: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 7h2v2H2zM4 9h2v2H4zM6 11h2v2H6zM8 9h2v2H8zM10 7h2v2h-2zM12 5h2v2h-2zM14 3h2v2h-2z"/></svg>',
@@ -15,10 +16,11 @@ const UI = (function () {
   };
 
   function cache() {
-    ['hdDate', 'hdKibble', 'hdBowlIcon', 'hdSpecial', 'hdSpecialNum', 'hdFood',
+    ['hdDate', 'hdKibble', 'hdBowlIcon', 'hdSpecial', 'hdSpecialNum', 'hdFood', 'hdGear',
       'todoList', 'addForm', 'addInput', 'albumGrid', 'albumCount', 'shopList',
       'tabs', 'toast', 'sheetWrap', 'sheet', 'sheetDim', 'camBtn', 'giftBtn',
-      'sceneHint', 'scene', 'pageHome', 'pageAlbum', 'pageShop'].forEach(function (id) {
+      'sceneHint', 'scene', 'pageHome', 'pageLog', 'pageAlbum', 'pageShop', 'pageSet',
+      'calMonth', 'calGrid', 'calDow', 'calSum', 'calPrev', 'calNext', 'setList'].forEach(function (id) {
       el[id] = $(id);
     });
   }
@@ -28,16 +30,20 @@ const UI = (function () {
     return v < 10 ? '00' + v : v < 100 ? '0' + v : '' + v;
   }
 
+  function todoLabel(t) {
+    if (t.def != null && DEFAULT_TODOS[t.def]) return T.tx(DEFAULT_TODOS[t.def], 'text');
+    return t.text;
+  }
+
   /* ================= 헤더 ================= */
 
   function renderHeader() {
     const s = State.data;
-    const d = new Date();
-    el.hdDate.textContent = State.todayKey() + ' ' + WEEKDAY[d.getDay()];
+    el.hdDate.textContent = T.dateLabel();
     el.hdKibble.textContent = pad3(s.kibble);
 
     el.hdBowlIcon.innerHTML = '';
-    el.hdBowlIcon.appendChild(bowlIconEl(s.bowl, s.food.n, 34));
+    el.hdBowlIcon.appendChild(bowlIconEl(s.bowl, s.food.n, 30));
 
     if (s.special > 0) {
       el.hdSpecial.hidden = false;
@@ -53,6 +59,7 @@ const UI = (function () {
     const s = State.data;
     el.todoList.innerHTML = '';
     s.todos.forEach(function (t) {
+      const label = todoLabel(t);
       const li = document.createElement('li');
       li.className = 'todo' + (t.done ? ' done' : '') + (t.star ? ' star' : '');
       li.dataset.id = t.id;
@@ -60,7 +67,7 @@ const UI = (function () {
       const hit = document.createElement('button');
       hit.type = 'button';
       hit.className = 'todo-hit';
-      hit.setAttribute('aria-label', t.text + (t.done ? ' 완료 취소' : ' 완료'));
+      hit.setAttribute('aria-label', T.t(t.done ? 'aUndone' : 'aDone', { t: label }));
       hit.dataset.act = 'toggle';
 
       const box = document.createElement('span');
@@ -69,17 +76,17 @@ const UI = (function () {
 
       const txt = document.createElement('span');
       txt.className = 'todo-text';
-      txt.textContent = t.text;
+      txt.textContent = label;
 
       const mark = document.createElement('button');
       mark.type = 'button';
       mark.className = 'todo-mark';
       mark.dataset.act = 'star';
       if (t.done) {
-        mark.setAttribute('aria-label', '밥알 획득함');
+        mark.setAttribute('aria-label', T.t('aGot'));
         mark.appendChild(kibbleImg(t.star));
       } else {
-        mark.setAttribute('aria-label', t.star ? '특별한 할 일 해제' : '특별한 할 일로 지정');
+        mark.setAttribute('aria-label', T.t(t.star ? 'aStarOff' : 'aStarOn'));
         mark.innerHTML = ICON.star;
       }
 
@@ -88,7 +95,7 @@ const UI = (function () {
       del.className = 'todo-del';
       del.dataset.act = 'del';
       del.textContent = '✕';
-      del.setAttribute('aria-label', t.text + ' 삭제');
+      del.setAttribute('aria-label', T.t('aDel', { t: label }));
 
       li.appendChild(hit);
       li.appendChild(box);
@@ -108,17 +115,88 @@ const UI = (function () {
     }
     const img = document.createElement('img');
     img.src = special ? kibbleSpUrl : kibbleUrl;
-    img.alt = special ? '특별한 밥' : '밥알';
-    img.width = 16;
-    img.height = 16;
+    img.alt = T.t(special ? 'currencySpecial' : 'currency');
+    img.width = 14;
+    img.height = 14;
     return img;
+  }
+
+  /* ================= 기록 (캘린더) ================= */
+
+  function calLevel(n) {
+    if (!n) return 0;
+    if (n >= 7) return 4;
+    if (n >= 5) return 3;
+    if (n >= 3) return 2;
+    return 1;
+  }
+
+  function renderCalendar() {
+    const now = new Date();
+    if (!calCursor) calCursor = { y: now.getFullYear(), m: now.getMonth() };
+    const h = State.history();
+    const y = calCursor.y;
+    const m = calCursor.m;
+
+    el.calMonth.textContent = T.monthLabel(y, m);
+    el.calNext.disabled = (y > now.getFullYear()) || (y === now.getFullYear() && m >= now.getMonth());
+
+    el.calDow.innerHTML = '';
+    T.raw('weekdayShort').forEach(function (w) {
+      const c = document.createElement('span');
+      c.textContent = w;
+      el.calDow.appendChild(c);
+    });
+
+    el.calGrid.innerHTML = '';
+    const first = new Date(y, m, 1).getDay();
+    const days = new Date(y, m + 1, 0).getDate();
+    const todayK = State.todayKey();
+    let sumDone = 0;
+    let activeDays = 0;
+
+    for (let i = 0; i < first; i++) {
+      const pad = document.createElement('span');
+      pad.className = 'cal-cell pad';
+      el.calGrid.appendChild(pad);
+    }
+    for (let d = 1; d <= days; d++) {
+      const key = y + '-' + (m + 1 < 10 ? '0' : '') + (m + 1) + '-' + (d < 10 ? '0' : '') + d;
+      const rec = h[key];
+      const n = rec ? rec.d : 0;
+      if (n > 0) { sumDone += n; activeDays++; }
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'cal-cell l' + calLevel(n) + (key === todayK ? ' today' : '');
+      cell.dataset.day = key;
+      cell.dataset.n = n;
+      cell.textContent = d;
+      cell.setAttribute('aria-label', key + ' · ' + (n ? T.t('logDone', { n: n }) : T.t('logNone')));
+      el.calGrid.appendChild(cell);
+    }
+
+    const streak = State.streakDays();
+    el.calSum.textContent = T.t('logTotal', { n: sumDone, d: activeDays })
+      + (streak > 1 ? ' · ' + T.t('logStreak', { n: streak }) : '');
+  }
+
+  function calShift(delta) {
+    const now = new Date();
+    if (!calCursor) calCursor = { y: now.getFullYear(), m: now.getMonth() };
+    let m = calCursor.m + delta;
+    let y = calCursor.y;
+    while (m < 0) { m += 12; y--; }
+    while (m > 11) { m -= 12; y++; }
+    if (y > now.getFullYear() || (y === now.getFullYear() && m > now.getMonth())) return;
+    calCursor = { y: y, m: m };
+    renderCalendar();
   }
 
   /* ================= 도감 ================= */
 
   function renderAlbum() {
     const s = State.data;
-    el.albumCount.textContent = State.metCount() + ' / ' + CATS.length + ' 마리';
+    el.albumCount.textContent = T.t('albumCount', { n: State.metCount(), total: CATS.length });
     el.albumGrid.innerHTML = '';
 
     CATS.forEach(function (cat) {
@@ -128,18 +206,20 @@ const UI = (function () {
       card.className = 'cat-card' + (rec ? '' : ' locked');
       card.dataset.cat = cat.id;
 
-      const pc = spriteEl(catSprites(cat.id).portrait, 56);
+      const pc = spriteEl(catSprites(cat.id).portrait, 48);
       if (!rec) pc.style.filter = 'grayscale(1) brightness(0.5) opacity(0.3)';
       card.appendChild(pc);
 
       const name = document.createElement('span');
       name.className = 'cc-name';
-      name.textContent = rec ? (rec.name || cat.species) : '？？？';
+      name.textContent = rec ? (rec.name || T.tx(cat, 'species')) : T.t('unknown');
       card.appendChild(name);
 
       const sub = document.createElement('span');
       sub.className = 'cc-sub';
-      sub.textContent = rec ? cat.species + ' · ' + rec.visits + '번 방문' : RARITY[cat.rarity].label;
+      sub.textContent = rec
+        ? T.tx(cat, 'species') + ' · ' + T.t('visits', { n: rec.visits })
+        : T.rarityLabel(cat.rarity);
       card.appendChild(sub);
 
       if (rec) {
@@ -155,7 +235,7 @@ const UI = (function () {
         if (rec.aff >= RULES.affRegular) {
           const b = document.createElement('span');
           b.className = 'cc-badge';
-          b.textContent = '단골';
+          b.textContent = T.t('regular');
           card.appendChild(b);
         }
       }
@@ -176,16 +256,16 @@ const UI = (function () {
 
       const isBowl = shopTab === 'bowl';
       const sprite = isBowl ? bowlSprite(it.id) : giftSprite(it.id);
-      row.appendChild(spriteEl(sprite, 40));
+      row.appendChild(spriteEl(sprite, 34));
 
       const info = document.createElement('div');
       info.className = 'shop-info';
       const nm = document.createElement('div');
       nm.className = 'shop-name';
-      nm.textContent = it.name;
+      nm.textContent = T.tx(it, 'name');
       const ds = document.createElement('div');
       ds.className = 'shop-desc';
-      ds.textContent = it.desc;
+      ds.textContent = T.tx(it, 'desc');
       info.appendChild(nm);
       info.appendChild(ds);
 
@@ -193,7 +273,9 @@ const UI = (function () {
       if (owned) {
         const hv = document.createElement('div');
         hv.className = 'shop-have';
-        hv.textContent = isBowl ? (s.bowl === it.id ? '사용 중' : '보유 중') : (s.inventory[it.id] + '개 보유');
+        hv.textContent = isBowl
+          ? (s.bowl === it.id ? T.t('inUse') : T.t('owned'))
+          : T.t('ownedN', { n: s.inventory[it.id] });
         info.appendChild(hv);
       }
       row.appendChild(info);
@@ -203,11 +285,11 @@ const UI = (function () {
       btn.className = 'shop-buy';
       if (isBowl && owned) {
         btn.classList.add('owned');
-        btn.textContent = s.bowl === it.id ? '사용 중' : '바꾸기';
+        btn.textContent = s.bowl === it.id ? T.t('inUse') : T.t('swap');
         btn.disabled = s.bowl === it.id;
         btn.dataset.use = it.id;
       } else {
-        btn.textContent = '밥알 ' + it.price;
+        btn.textContent = T.t('buyPrice', { n: it.price });
         btn.disabled = s.kibble < it.price;
         btn.dataset.buy = it.id;
       }
@@ -219,13 +301,108 @@ const UI = (function () {
     help.type = 'button';
     help.className = 'shop-buy';
     help.style.width = '100%';
-    help.style.marginTop = '20px';
+    help.style.marginTop = '16px';
     help.dataset.help = '1';
-    help.textContent = '놀이 방법 보기';
+    help.textContent = T.t('howTo');
     el.shopList.appendChild(help);
   }
 
   function setShopTab(t) { shopTab = t; renderShop(); }
+
+  /* ================= 설정 ================= */
+
+  let onSetChange = null;
+
+  function setSection(title) {
+    const h = document.createElement('h2');
+    h.className = 'set-h';
+    h.textContent = title;
+    el.setList.appendChild(h);
+  }
+
+  function segRow(options, active, onPick) {
+    const wrap = document.createElement('div');
+    wrap.className = 'seg';
+    options.forEach(function (o) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = o.label;
+      if (o.value === active) b.classList.add('on');
+      b.addEventListener('click', function () { onPick(o.value); });
+      wrap.appendChild(b);
+    });
+    el.setList.appendChild(wrap);
+  }
+
+  function linkRow(label, text, href) {
+    const a = document.createElement('a');
+    a.className = 'set-row';
+    a.href = href;
+    a.target = '_blank';
+    a.rel = 'noreferrer noopener';
+    const k = document.createElement('span');
+    k.className = 'set-k';
+    k.textContent = label;
+    const v = document.createElement('span');
+    v.className = 'set-v';
+    v.textContent = text;
+    a.appendChild(k);
+    a.appendChild(v);
+    el.setList.appendChild(a);
+    return a;
+  }
+
+  function textRow(label, text) {
+    const d = document.createElement('div');
+    d.className = 'set-row';
+    const k = document.createElement('span');
+    k.className = 'set-k';
+    k.textContent = label;
+    const v = document.createElement('span');
+    v.className = 'set-v';
+    v.textContent = text;
+    d.appendChild(k);
+    d.appendChild(v);
+    el.setList.appendChild(d);
+  }
+
+  function renderSettings() {
+    const s = State.data;
+    el.setList.innerHTML = '';
+
+    setSection(T.t('setLang'));
+    segRow([
+      { value: 'ko', label: T.t('setLangKo') },
+      { value: 'en', label: T.t('setLangEn') },
+    ], T.lang(), function (v) { if (onSetChange) onSetChange('lang', v); });
+
+    setSection(T.t('setSound'));
+    segRow([
+      { value: true, label: T.t('setSoundOn') },
+      { value: false, label: T.t('setSoundOff') },
+    ], !!s.sound, function (v) { if (onSetChange) onSetChange('sound', v); });
+
+    setSection(T.t('setAbout'));
+    const made = document.createElement('div');
+    made.className = 'set-made';
+    made.textContent = T.t('madeBy');
+    el.setList.appendChild(made);
+    linkRow(T.t('setHome'), 'heymomdi.com', APP_INFO.home);
+    linkRow(T.t('setMail'), APP_INFO.mail, 'mailto:' + APP_INFO.mail);
+    textRow(T.t('setVersion'), 'v' + APP_INFO.version);
+
+    setSection(T.t('setData'));
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'set-danger';
+    btn.textContent = T.t('setReset');
+    btn.addEventListener('click', function () { if (onSetChange) onSetChange('reset'); });
+    el.setList.appendChild(btn);
+    const sub = document.createElement('p');
+    sub.className = 'set-note';
+    sub.textContent = T.t('setResetSub');
+    el.setList.appendChild(sub);
+  }
 
   /* ================= 씬 버튼 ================= */
 
@@ -238,9 +415,9 @@ const UI = (function () {
     el.giftBtn.hidden = !canGift;
 
     let hint = '';
-    if (cat) hint = cat.photographed ? '' : '카메라로 찍어 도감에 남겨 보세요';
-    else if (s.food.n <= 0) hint = s.kibble > 0 ? '밥그릇을 눌러 밥을 담아 주세요' : '할 일을 체크하면 밥알이 생겨요';
-    else hint = '밥을 두고 기다리면 냥이가 찾아와요';
+    if (cat) hint = cat.photographed ? '' : T.t('hintShoot');
+    else if (s.food.n <= 0) hint = s.kibble > 0 ? T.t('hintFeed') : T.t('hintNoFood');
+    else hint = T.t('hintWait');
     el.sceneHint.textContent = hint;
     el.sceneHint.classList.toggle('on', !!hint);
   }
@@ -267,6 +444,7 @@ const UI = (function () {
     el.sheet.innerHTML = '';
     build(el.sheet);
     el.sheetWrap.hidden = false;
+    Sound.play('pop');
     sheetOnClose = onClose || null;
     const focusable = el.sheet.querySelector('input, button');
     if (focusable) setTimeout(function () { focusable.focus(); }, 40);
@@ -297,7 +475,7 @@ const UI = (function () {
     b.type = 'button';
     b.className = 'sh-row';
     if (opts.disabled) b.disabled = true;
-    if (opts.sprite) b.appendChild(spriteEl(opts.sprite, 36));
+    if (opts.sprite) b.appendChild(spriteEl(opts.sprite, 32));
     const main = document.createElement('div');
     main.className = 'shr-main';
     const n = document.createElement('div');
@@ -341,11 +519,16 @@ const UI = (function () {
     el: el,
     ICON: ICON,
     pad3: pad3,
+    todoLabel: todoLabel,
     renderHeader: renderHeader,
     renderTodos: renderTodos,
+    renderCalendar: renderCalendar,
+    calShift: calShift,
     renderAlbum: renderAlbum,
     renderShop: renderShop,
     setShopTab: setShopTab,
+    renderSettings: renderSettings,
+    set onSettingsChange(fn) { onSetChange = fn; },
     renderScene: renderScene,
     toast: toast,
     openSheet: openSheet,

@@ -1,5 +1,5 @@
 /* ===========================================================
-   냥밥 — 진행 로직 / 이벤트 연결
+   츄두리스트 — 진행 로직 / 이벤트 연결
    =========================================================== */
 
 (function () {
@@ -54,6 +54,12 @@
     return pool[Math.floor(Math.random() * pool.length)].id;
   }
 
+  function catLabel(breed) {
+    const info = CAT_BY_ID[breed];
+    const rec = State.data.cats[breed];
+    return (rec && rec.name) || T.tx(info, 'species');
+  }
+
   /* ================= 씬 훅 ================= */
 
   Scene.hooks.canSpawn = function () { return State.data.food.n > 0; };
@@ -67,11 +73,11 @@
     const res = State.meetCat(cat.breed);
     cat.isNew = res.isNew;
     const info = CAT_BY_ID[cat.breed];
-    const label = res.rec.name || info.species;
+    Sound.play('meow');
     if (res.isNew) {
-      UI.toast('처음 보는 ' + RARITY[info.rarity].label + '가 찾아왔어요');
+      UI.toast(T.t('newVisitor', { rarity: T.rarityLabel(info.rarity) }));
     } else {
-      UI.toast(label + ' 왔다');
+      UI.toast(T.t('visitorCame', { name: catLabel(cat.breed) }));
     }
     if (tab !== 'home') markHomeDot(true);
     UI.renderHeader();
@@ -85,10 +91,8 @@
   };
 
   Scene.hooks.onLeave = function (cat) {
-    const info = CAT_BY_ID[cat.breed];
-    const rec = State.data.cats[cat.breed];
-    const label = (rec && rec.name) || info.species;
-    UI.toast(label + '이(가) 돌아갔어요');
+    Sound.play('bye');
+    UI.toast(T.t('visitorLeft', { name: catLabel(cat.breed) }));
     UI.renderScene();
   };
 
@@ -111,16 +115,21 @@
     Array.prototype.forEach.call(el.tabs.children, function (b) {
       b.classList.toggle('on', b.dataset.tab === next);
     });
+    el.hdGear.classList.toggle('on', next === 'set');
     el.scene.style.display = next === 'home' ? '' : 'none';
     el.pageHome.hidden = next !== 'home';
+    el.pageLog.hidden = next !== 'log';
     el.pageAlbum.hidden = next !== 'album';
     el.pageShop.hidden = next !== 'shop';
+    el.pageSet.hidden = next !== 'set';
     if (next === 'home') {
       markHomeDot(false);
       requestAnimationFrame(function () { Scene.resize(); });
     }
+    if (next === 'log') UI.renderCalendar();
     if (next === 'album') UI.renderAlbum();
     if (next === 'shop') UI.renderShop();
+    if (next === 'set') UI.renderSettings();
   }
 
   /* ================= 시트들 ================= */
@@ -129,35 +138,34 @@
     const s = State.data;
     const bowl = BOWL_BY_ID[s.bowl];
     UI.openSheet(function (box) {
-      UI.sheetHead(box, '밥그릇에 밥 담기',
-        bowl.name + ' · ' + s.food.n + ' / ' + State.capacity() + '알 담겨 있어요');
+      UI.sheetHead(box, T.t('feedTitle'),
+        T.t('feedSub', { bowl: T.tx(bowl, 'name'), n: s.food.n, cap: State.capacity() }));
       const body = document.createElement('div');
       body.className = 'sh-body';
 
       UI.sheetRow(body, {
         sprite: KIBBLE,
-        name: '밥알 한 알 담기',
-        sub: '보유 ' + s.kibble + '알',
-        go: '담기',
+        name: T.t('feedOne'),
+        sub: T.t('feedOneSub', { n: s.kibble }),
+        go: T.t('put'),
         disabled: s.kibble <= 0 || s.food.n >= State.capacity(),
         onClick: function () { doFeed('normal', 1); },
       });
 
       UI.sheetRow(body, {
         sprite: KIBBLE,
-        name: '가득 채우기',
-        sub: '빈자리만큼 한 번에',
-        go: '담기',
+        name: T.t('feedFull'),
+        sub: T.t('feedFullSub'),
+        go: T.t('put'),
         disabled: s.kibble <= 0 || s.food.n >= State.capacity(),
         onClick: function () { doFeed('normal', State.capacity() - s.food.n); },
       });
 
       UI.sheetRow(body, {
         sprite: KIBBLE_SPECIAL,
-        name: '특별한 밥 담기',
-        sub: s.special > 0 ? '보유 ' + s.special + '개 · 귀한 냥이가 올 확률이 크게 올라가요'
-          : '★ 할 일을 끝내면 생겨요',
-        go: '담기',
+        name: T.t('feedSpecial'),
+        sub: s.special > 0 ? T.t('feedSpecialHave', { n: s.special }) : T.t('feedSpecialNone'),
+        go: T.t('put'),
         disabled: s.special <= 0 || s.food.n >= State.capacity(),
         onClick: function () { doFeed('special', 1); },
       });
@@ -165,12 +173,13 @@
       if (s.inventory.item_bell) {
         UI.sheetRow(body, {
           sprite: giftSprite('item_bell'),
-          name: '딸랑 방울 흔들기',
-          sub: '보유 ' + s.inventory.item_bell + '개 · 냥이를 바로 부른다',
-          go: '흔들기',
+          name: T.t('bellUse', { name: T.tx(GIFT_BY_ID.item_bell, 'name') }),
+          sub: T.t('bellSub', { n: s.inventory.item_bell }),
+          go: T.t('shake'),
           disabled: s.food.n <= 0 || Scene.visitors.length >= 2,
           onClick: function () {
             State.useGift('item_bell');
+            Sound.play('bell');
             const b = pickBreed();
             if (b) Scene.spawn(b);
             UI.closeSheet();
@@ -179,20 +188,22 @@
       }
 
       box.appendChild(body);
-      UI.sheetActions(box, [{ label: '닫기', ghost: true, onClick: UI.closeSheet }]);
+      UI.sheetActions(box, [{ label: T.t('close'), ghost: true, onClick: UI.closeSheet }]);
     });
   }
 
   function doFeed(kind, amount) {
     const r = State.feed(kind, amount);
     if (!r.ok) {
+      Sound.play('nope');
       UI.toast(r.reason);
       return;
     }
+    Sound.play('drop');
     UI.renderHeader();
     UI.renderScene();
     UI.closeSheet();
-    UI.toast(kind === 'special' ? '특별한 밥을 담았어요' : '밥알 ' + r.put + '알을 담았어요');
+    UI.toast(kind === 'special' ? T.t('fedSpecial') : T.t('fedNormal', { n: r.put }));
   }
 
   function giftSheet() {
@@ -200,9 +211,8 @@
     if (!cat) return;
     const s = State.data;
     const info = CAT_BY_ID[cat.breed];
-    const rec = s.cats[cat.breed];
     UI.openSheet(function (box) {
-      UI.sheetHead(box, '선물 주기', (rec.name || info.species) + '에게 무엇을 줄까요');
+      UI.sheetHead(box, T.t('giftTitle'), T.t('giftSub', { name: catLabel(cat.breed) }));
       const body = document.createElement('div');
       body.className = 'sh-body';
       let any = false;
@@ -213,19 +223,19 @@
         any = true;
         UI.sheetRow(body, {
           sprite: giftSprite(g.id),
-          name: g.name,
-          sub: have + '개 보유 · 친밀도 +' + g.aff + (info.likes === g.id ? ' (좋아하는 선물!)' : ''),
-          go: '주기',
+          name: T.tx(g, 'name'),
+          sub: T.t('giftHave', { n: have, aff: g.aff, fav: info.likes === g.id ? T.t('giftFav') : '' }),
+          go: T.t('give'),
           onClick: function () { doGift(cat, g); },
         });
       });
       if (!any) {
         const p = document.createElement('p');
-        p.textContent = '가진 선물이 없어요. 상점에서 살 수 있어요.';
+        p.textContent = T.t('giftNone');
         body.appendChild(p);
       }
       box.appendChild(body);
-      UI.sheetActions(box, [{ label: '닫기', ghost: true, onClick: UI.closeSheet }]);
+      UI.sheetActions(box, [{ label: T.t('close'), ghost: true, onClick: UI.closeSheet }]);
     });
   }
 
@@ -237,13 +247,17 @@
     cat.gifted = true;
     cat.rest += 8;
     Scene.pop(cat);
+    Sound.play('gift');
     UI.closeSheet();
     UI.renderScene();
     const rec = State.data.cats[cat.breed];
-    UI.toast((rec.name || info.species) + '이(가) 좋아해요' + (bonus ? ' (최애 선물!)' : ''));
+    UI.toast(T.t('giftLiked', { name: catLabel(cat.breed), fav: bonus ? T.t('giftFavToast') : '' }));
     if (rec.aff >= RULES.affRegular && !rec.regularNoticed) {
       rec.regularNoticed = true;
-      setTimeout(function () { UI.toast((rec.name || info.species) + '이(가) 단골이 되었어요'); }, 2400);
+      setTimeout(function () {
+        Sound.play('sparkle');
+        UI.toast(T.t('becameRegular', { name: catLabel(cat.breed) }));
+      }, 2400);
     }
   }
 
@@ -251,12 +265,12 @@
     const info = CAT_BY_ID[catId];
     const rec = State.data.cats[catId];
     UI.openSheet(function (box) {
-      UI.sheetHead(box, '이름 지어 주기', info.species + '에게 부를 이름을 정해 주세요');
+      UI.sheetHead(box, T.t('nameTitle'), T.t('nameSub', { species: T.tx(info, 'species') }));
       const stack = document.createElement('div');
       stack.className = 'sh-body sh-stack';
       const pw = document.createElement('div');
       pw.className = 'sh-portrait';
-      pw.appendChild(spriteEl(catSprites(catId).portrait, 84));
+      pw.appendChild(spriteEl(catSprites(catId).portrait, 76));
       stack.appendChild(pw);
       box.appendChild(stack);
 
@@ -264,24 +278,25 @@
       input.className = 'sh-input';
       input.type = 'text';
       input.maxLength = 8;
-      input.placeholder = info.species;
+      input.placeholder = T.tx(info, 'species');
       input.value = rec ? rec.name : '';
       input.autocomplete = 'off';
       box.appendChild(input);
 
       function commit() {
-        State.nameCat(catId, input.value || info.species);
+        State.nameCat(catId, input.value || T.tx(info, 'species'));
+        Sound.play('sparkle');
         UI.closeSheet();
         UI.renderAlbum();
-        UI.toast('이제 ' + (State.data.cats[catId].name) + '(이)라고 부를게요');
+        UI.toast(T.t('named', { name: State.data.cats[catId].name }));
         if (after) after();
       }
       input.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); commit(); }
       });
       UI.sheetActions(box, [
-        { label: '나중에', ghost: true, onClick: function () { UI.closeSheet(); if (after) after(); } },
-        { label: '이 이름으로', onClick: commit },
+        { label: T.t('later'), ghost: true, onClick: function () { UI.closeSheet(); if (after) after(); } },
+        { label: T.t('nameOk'), onClick: commit },
       ]);
     });
   }
@@ -291,20 +306,19 @@
     const rec = State.data.cats[catId];
     UI.openSheet(function (box) {
       if (!rec) {
-        UI.sheetHead(box, '아직 만나지 못했어요', RARITY[info.rarity].label);
+        UI.sheetHead(box, T.t('notMet'), T.rarityLabel(info.rarity));
         const body = document.createElement('div');
         body.className = 'sh-body';
         const p = document.createElement('p');
-        p.textContent = info.rarity === 'common'
-          ? '밥그릇에 밥을 담아 두고 기다려 보세요.'
-          : '특별한 밥을 담아 두면 만날 확률이 올라가요.';
+        p.textContent = info.rarity === 'common' ? T.t('notMetCommon') : T.t('notMetRare');
         body.appendChild(p);
         box.appendChild(body);
-        UI.sheetActions(box, [{ label: '닫기', ghost: true, onClick: UI.closeSheet }]);
+        UI.sheetActions(box, [{ label: T.t('close'), ghost: true, onClick: UI.closeSheet }]);
         return;
       }
 
-      UI.sheetHead(box, rec.name || info.species, info.species + ' · ' + RARITY[info.rarity].label);
+      UI.sheetHead(box, rec.name || T.tx(info, 'species'),
+        T.tx(info, 'species') + ' · ' + T.rarityLabel(info.rarity));
       const stack = document.createElement('div');
       stack.className = 'sh-body sh-stack';
 
@@ -313,21 +327,21 @@
         pol.className = 'polaroid';
         const img = document.createElement('img');
         img.src = rec.photo;
-        img.alt = (rec.name || info.species) + ' 사진';
+        img.alt = T.t('photoAlt', { name: catLabel(catId) });
         pol.appendChild(img);
         stack.appendChild(pol);
       } else {
         const empty = document.createElement('div');
         empty.className = 'polaroid empty';
-        empty.textContent = '아직 사진이 없어요';
+        empty.textContent = T.t('noPhoto');
         stack.appendChild(empty);
       }
 
       const meta = document.createElement('dl');
       meta.className = 'sh-meta';
-      [['방문', rec.visits + '번'],
-        ['친밀도', rec.aff + (rec.aff >= RULES.affRegular ? ' · 단골' : '')],
-        ['좋아하는 것', (GIFT_BY_ID[info.likes] || {}).name || '-']].forEach(function (row) {
+      [[T.t('mVisit'), T.t('mVisitN', { n: rec.visits })],
+        [T.t('mAff'), rec.aff + (rec.aff >= RULES.affRegular ? ' · ' + T.t('regular') : '')],
+        [T.t('mLikes'), T.tx(GIFT_BY_ID[info.likes], 'name') || '-']].forEach(function (row) {
         const dt = document.createElement('dt');
         dt.textContent = row[0];
         const dd = document.createElement('dd');
@@ -338,31 +352,31 @@
       stack.appendChild(meta);
 
       const desc = document.createElement('p');
-      desc.textContent = info.desc;
+      desc.textContent = T.tx(info, 'desc');
       stack.appendChild(desc);
       box.appendChild(stack);
 
       UI.sheetActions(box, [
-        { label: '닫기', ghost: true, onClick: UI.closeSheet },
-        { label: '이름 바꾸기', onClick: function () { nameSheet(catId); } },
+        { label: T.t('close'), ghost: true, onClick: UI.closeSheet },
+        { label: T.t('rename'), onClick: function () { nameSheet(catId); } },
       ]);
     });
   }
 
   function guideSheet() {
     UI.openSheet(function (box) {
-      UI.sheetHead(box, '냥밥 놀이 방법', '하루 할 일을 체크하고 길냥이를 모아요');
+      UI.sheetHead(box, T.t('guideTitle'), T.t('guideSub'));
       const body = document.createElement('div');
       body.className = 'sh-body';
-      [['할 일을 체크하면', '밥알이 한 알씩 생겨요.'],
-        ['★ 특별한 할 일', '끝내면 특별한 밥이 생겨요. 하루 ' + RULES.maxStars + '개까지 지정할 수 있어요.'],
-        ['하루 ' + RULES.bonusAt + '개를 넘기면', '특별한 밥을 덤으로 받아요.'],
-        ['밥그릇을 누르면', '밥을 담을 수 있어요. 밥이 있어야 냥이가 찾아와요.'],
-        ['특별한 밥을 담으면', '귀하거나 전설의 냥이가 올 수 있어요.'],
-        ['냥이가 오면', '카메라로 찍어 도감에 남기고 이름을 지어 주세요.'],
-        ['선물을 주면', '친밀도가 올라가고, 단골이 되면 더 자주 들러요.']].forEach(function (r) {
+      [[T.t('g1a'), T.t('g1b')],
+        [T.t('g2a'), T.t('g2b', { n: RULES.maxStars })],
+        [T.t('g3a', { n: RULES.bonusAt }), T.t('g3b')],
+        [T.t('g4a'), T.t('g4b')],
+        [T.t('g5a'), T.t('g5b')],
+        [T.t('g6a'), T.t('g6b')],
+        [T.t('g7a'), T.t('g7b')]].forEach(function (r) {
         const p = document.createElement('p');
-        p.style.marginBottom = '10px';
+        p.style.marginBottom = '9px';
         const b = document.createElement('b');
         b.style.color = 'var(--ink)';
         b.style.fontWeight = '700';
@@ -372,7 +386,41 @@
         body.appendChild(p);
       });
       box.appendChild(body);
-      UI.sheetActions(box, [{ label: '알겠어요', onClick: UI.closeSheet }]);
+      UI.sheetActions(box, [{ label: T.t('gotIt'), onClick: UI.closeSheet }]);
+    });
+  }
+
+  function daySheet(key, n) {
+    UI.openSheet(function (box) {
+      const parts = key.split('-');
+      const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+      const isToday = key === State.todayKey();
+      UI.sheetHead(box, T.dateLabel(d), isToday ? T.t('logToday') : '');
+      const body = document.createElement('div');
+      body.className = 'sh-body';
+      const p = document.createElement('p');
+      p.textContent = n > 0 ? T.t('logDone', { n: n }) : T.t('logNone');
+      body.appendChild(p);
+      box.appendChild(body);
+      UI.sheetActions(box, [{ label: T.t('close'), ghost: true, onClick: UI.closeSheet }]);
+    });
+  }
+
+  function resetSheet() {
+    UI.openSheet(function (box) {
+      UI.sheetHead(box, T.t('setResetAsk'), T.t('setResetSub2'));
+      UI.sheetActions(box, [
+        { label: T.t('cancel'), ghost: true, onClick: UI.closeSheet },
+        {
+          label: T.t('confirmReset'),
+          onClick: function () {
+            State.reset();
+            UI.closeSheet();
+            refreshAll();
+            UI.toast(T.t('resetDone'));
+          },
+        },
+      ]);
     });
   }
 
@@ -385,6 +433,7 @@
     flash.classList.remove('fire');
     void flash.offsetWidth;
     flash.classList.add('fire');
+    Sound.play('shutter');
 
     const url = Scene.capture(cat);
     State.setPhoto(cat.breed, url);
@@ -399,8 +448,21 @@
     if (!rec.name) {
       setTimeout(function () { nameSheet(cat.breed); }, 420);
     } else {
-      UI.toast('사진을 도감에 담았어요');
+      UI.toast(T.t('photoSaved'));
     }
+  }
+
+  /* ================= 전체 갱신 ================= */
+
+  function refreshAll() {
+    T.apply();
+    UI.renderHeader();
+    UI.renderTodos();
+    UI.renderScene();
+    if (tab === 'log') UI.renderCalendar();
+    if (tab === 'album') UI.renderAlbum();
+    if (tab === 'shop') UI.renderShop();
+    if (tab === 'set') UI.renderSettings();
   }
 
   /* ================= 이벤트 ================= */
@@ -422,19 +484,22 @@
         UI.renderHeader();
         UI.renderScene();
         if (r.todo.done) {
-          if (r.gain.bonus) UI.toast(r.gain.bonus);
-          else if (r.gain.special > 0) UI.toast('특별한 밥이 생겼어요');
-          else UI.toast('밥알 +' + r.gain.kibble);
+          if (r.gain.bonus) { Sound.play('sparkle'); UI.toast(r.gain.bonus); }
+          else if (r.gain.special > 0) { Sound.play('sparkle'); UI.toast(T.t('gotSpecial')); }
+          else { Sound.play('check'); UI.toast(T.t('gotKibble', { n: r.gain.kibble })); }
+        } else {
+          Sound.play('uncheck');
         }
       } else if (act === 'star') {
         const t = State.data.todos.find(function (x) { return x.id === id; });
-        if (t && t.done) { UI.toast('이미 끝낸 할 일이에요'); return; }
+        if (t && t.done) { Sound.play('nope'); UI.toast(T.t('alreadyDone')); return; }
         const r = State.toggleStar(id);
-        if (!r.ok) { UI.toast(r.reason); return; }
+        if (!r.ok) { Sound.play('nope'); UI.toast(r.reason); return; }
         UI.renderTodos();
-        if (r.star) UI.toast('특별한 할 일로 정했어요');
+        if (r.star) { Sound.play('sparkle'); UI.toast(T.t('starSet')); }
       } else if (act === 'del') {
         State.removeTodo(id);
+        Sound.play('uncheck');
         UI.renderTodos();
       }
     });
@@ -445,6 +510,7 @@
       if (!v.trim()) return;
       State.addTodo(v);
       el.addInput.value = '';
+      Sound.play('tap');
       UI.renderTodos();
     });
 
@@ -456,11 +522,23 @@
     el.hdFood.addEventListener('click', feedSheet);
     el.camBtn.addEventListener('click', function (e) { e.stopPropagation(); shoot(); });
     el.giftBtn.addEventListener('click', function (e) { e.stopPropagation(); giftSheet(); });
+    el.hdGear.addEventListener('click', function () {
+      Sound.play('tap');
+      setTab(tab === 'set' ? 'home' : 'set');
+    });
 
     // 탭
     el.tabs.addEventListener('click', function (e) {
       const b = e.target.closest('[data-tab]');
-      if (b) setTab(b.dataset.tab);
+      if (b) { Sound.play('tap'); setTab(b.dataset.tab); }
+    });
+
+    // 기록
+    el.calPrev.addEventListener('click', function () { Sound.play('tap'); UI.calShift(-1); });
+    el.calNext.addEventListener('click', function () { Sound.play('tap'); UI.calShift(1); });
+    el.calGrid.addEventListener('click', function (e) {
+      const c = e.target.closest('[data-day]');
+      if (c) daySheet(c.dataset.day, +c.dataset.n);
     });
 
     // 도감
@@ -469,6 +547,22 @@
       if (c) catSheet(c.dataset.cat);
     });
 
+    // 설정
+    UI.onSettingsChange = function (kind, value) {
+      if (kind === 'lang') {
+        State.setLang(value);
+        Sound.play('tap');
+        refreshAll();
+      } else if (kind === 'sound') {
+        State.setSound(value);
+        Sound.setEnabled(value);
+        if (value) Sound.play('sparkle');
+        UI.renderSettings();
+      } else if (kind === 'reset') {
+        resetSheet();
+      }
+    };
+
     // 상점
     document.querySelector('.shop-tabs').addEventListener('click', function (e) {
       const b = e.target.closest('[data-shop]');
@@ -476,6 +570,7 @@
       Array.prototype.forEach.call(b.parentNode.children, function (x) {
         x.classList.toggle('on', x === b);
       });
+      Sound.play('tap');
       UI.setShopTab(b.dataset.shop);
     });
 
@@ -486,21 +581,24 @@
       if (help) { guideSheet(); return; }
       if (use) {
         if (State.useBowl(use.dataset.use)) {
+          Sound.play('drop');
           UI.renderShop();
           UI.renderHeader();
-          UI.toast('밥그릇을 바꿨어요');
+          UI.toast(T.t('bowlSwapped'));
         } else {
-          UI.toast('담긴 밥을 먼저 비워 주세요');
+          Sound.play('nope');
+          UI.toast(T.t('emptyFirst'));
         }
         return;
       }
       if (buy) {
         const r = State.buy(buy.dataset.buy);
-        if (!r.ok) { UI.toast(r.reason || '살 수 없어요'); return; }
+        if (!r.ok) { Sound.play('nope'); UI.toast(r.reason || T.t('cantBuy')); return; }
+        Sound.play('coin');
         UI.renderShop();
         UI.renderHeader();
         UI.renderScene();
-        UI.toast(r.item.name + '을(를) 샀어요');
+        UI.toast(T.t('bought', { name: T.tx(r.item, 'name') }));
       }
     });
 
@@ -515,7 +613,7 @@
       if (State.rollover()) {
         UI.renderTodos();
         UI.renderHeader();
-        UI.toast('새로운 하루예요. 할 일을 다시 체크해 보세요');
+        UI.toast(T.t('newDay'));
       }
     }, 30000);
 
@@ -532,6 +630,9 @@
   function boot() {
     State.load();
     UI.cache();
+    T.apply();
+    Sound.setEnabled(State.data.sound !== false);
+    Sound.unlock();
     Scene.init(document.getElementById('room'));
     bind();
     UI.renderHeader();
