@@ -21,10 +21,11 @@ app.on('window-all-closed', function () { log('all-closed'); });
 const DEFAULT_STATE = {
   kibble: 0,
   food: { n: 0 },
-  bowl: { x: 0.5, y: 0.8 },     /* 화면 비율 좌표 */
+  bowl: { x: 0.5, y: 0.94 },    /* 화면 비율 좌표 — 처음엔 화면 아래쪽 */
   todos: [],
   cats: {},
   sound: true,
+  seen: false,
   feedMode: 'full',
   date: '',
 };
@@ -164,6 +165,7 @@ ipcMain.on('state:push', function (e, snap) {
 });
 
 ipcMain.on('memo:open', function () { createMemo(); });
+ipcMain.on('seen', function () { state.seen = true; saveState(); });
 
 /* 게임 메시지는 바탕화면 밥그릇 옆에 띄운다 */
 ipcMain.on('notice', function (e, text) {
@@ -272,6 +274,18 @@ app.whenReady().then(function () {
     } catch (e) { log('dock icon', e && e.message); }
   }
   log('dock shown');
+
+  /* 처음 켠 사람에게 옮길 수 있다는 걸 알려 준다 */
+  if (!state.seen && overlay && !overlay.isDestroyed()) {
+    setTimeout(function () {
+      overlay.webContents.send('notice', '밥그릇과 고양이는 끌어서 옮길 수 있어요');
+    }, 2500);
+    setTimeout(function () {
+      overlay.webContents.send('notice', '밥그릇을 두 번 누르면 할 일 창이 열려요');
+    }, 7000);
+    state.seen = true;
+    saveState();
+  }
 
 });
 

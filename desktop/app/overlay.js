@@ -291,7 +291,7 @@ const notice = { text: '', t: 0 };
 function showNotice(text) {
   if (!text) return;
   notice.text = String(text);
-  notice.t = 3.2;
+  notice.t = 4.2;
 }
 
 function drawNotice(dt) {

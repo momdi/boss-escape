@@ -412,13 +412,20 @@
       UI.sheetHead(box, T.t('guideTitle'), T.t('guideSub'));
       const body = document.createElement('div');
       body.className = 'sh-body';
-      [[T.t('g1a'), T.t('g1b')],
+      /* 바탕화면 앱과 웹은 조작이 달라 문구를 나눈다 */
+      const onDesk = !!window.desk;
+      const rows = [
+        [T.t('g1a'), T.t('g1b')],
         [T.t('g2a'), T.t('g2b', { n: RULES.maxStars })],
         [T.t('g3a', { n: RULES.bonusAt }), T.t('g3b')],
-        [T.t('g4a'), T.t('g4b')],
-        [T.t('g5a'), T.t('g5b')],
-        [T.t('g6a'), T.t('g6b')],
-        [T.t('g7a'), T.t('g7b')]].forEach(function (r) {
+        onDesk ? [T.t('g4a'), T.t('g4b')] : [T.t('g4wa'), T.t('g4wb')],
+      ];
+      if (onDesk) rows.push([T.t('g5a'), T.t('g5b')]);
+      rows.push([T.t('g6a'), T.t('g6b')]);
+      rows.push(onDesk ? [T.t('g7a'), T.t('g7b')] : [T.t('g7wa'), T.t('g7wb')]);
+      if (onDesk) rows.push([T.t('g8a'), T.t('g8b')]);
+      rows.push([T.t('g9a'), T.t('g9b')]);
+      rows.forEach(function (r) {
         const p = document.createElement('p');
         p.style.marginBottom = '9px';
         const b = document.createElement('b');
