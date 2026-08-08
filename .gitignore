@@ -1,0 +1,5 @@
+.DS_Store
+**/.DS_Store
+desktop/node_modules/
+desktop/dist/
+node_modules/

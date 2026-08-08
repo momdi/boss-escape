@@ -1,0 +1,17 @@
+{
+  "name": "츄두리스트 — 오늘의 할 일",
+  "short_name": "츄두리스트",
+  "description": "할 일을 마치면 사료가 생기고, 밥을 담아 두면 길냥이가 찾아옵니다.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4eee3",
+  "theme_color": "#f4eee3",
+  "lang": "ko",
+  "icons": [
+    { "src": "img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

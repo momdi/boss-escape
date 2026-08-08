@@ -1,0 +1,92 @@
+{
+ "w_stand": [
+  "img/cats/w_stand.png",
+  97,
+  86
+ ],
+ "w_walk_0": [
+  "img/cats/w_walk_0.png",
+  104,
+  86
+ ],
+ "w_walk_1": [
+  "img/cats/w_walk_1.png",
+  112,
+  85
+ ],
+ "w_walk_2": [
+  "img/cats/w_walk_2.png",
+  112,
+  86
+ ],
+ "w_walk_3": [
+  "img/cats/w_walk_3.png",
+  119,
+  85
+ ],
+ "w_walk_4": [
+  "img/cats/w_walk_4.png",
+  105,
+  86
+ ],
+ "w_eat_0": [
+  "img/cats/w_eat_0.png",
+  125,
+  77
+ ],
+ "w_eat_1": [
+  "img/cats/w_eat_1.png",
+  134,
+  67
+ ],
+ "w_groom_0": [
+  "img/cats/w_groom_0.png",
+  116,
+  82
+ ],
+ "w_groom_1": [
+  "img/cats/w_groom_1.png",
+  120,
+  82
+ ],
+ "w_sitback": [
+  "img/cats/w_sitback.png",
+  115,
+  82
+ ],
+ "w_groom_2": [
+  "img/cats/w_groom_2.png",
+  115,
+  87
+ ],
+ "w_loaf": [
+  "img/cats/w_loaf.png",
+  95,
+  65
+ ],
+ "w_sleep": [
+  "img/cats/w_sleep.png",
+  100,
+  62
+ ],
+ "w_play_0": [
+  "img/cats/w_play_0.png",
+  130,
+  74
+ ],
+ "w_play_1": [
+  "img/cats/w_play_1.png",
+  155,
+  80
+ ],
+ "w_meow_0": [
+  "img/cats/w_meow_0.png",
+  120,
+  84
+ ],
+ "w_meow_1": [
+  "img/cats/w_meow_1.png",
+  117,
+  84
+ ]
+}

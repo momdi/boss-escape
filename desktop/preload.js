@@ -1,0 +1,21 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('desk', {
+  getState: function () { return ipcRenderer.invoke('state:get'); },
+  onState: function (fn) { ipcRenderer.on('state', function (e, s) { fn(s); }); },
+  setInteractive: function (on) { ipcRenderer.send('overlay:interactive', !!on); },
+  moveBowl: function (pos) { ipcRenderer.send('bowl:move', pos); },
+  feed: function (mode) { ipcRenderer.send('bowl:feed', mode); },
+  eatOne: function () { ipcRenderer.send('food:eat'); },
+  openMemo: function () { ipcRenderer.send('memo:open'); },
+  pushState: function (s) { ipcRenderer.send('state:push', s); },
+  onEat: function (fn) { ipcRenderer.on('eat', function () { fn(); }); },
+  onFeed: function (fn) { ipcRenderer.on('feed', function (e, mode) { fn(mode); }); },
+  onMet: function (fn) { ipcRenderer.on('met', function (e, b) { fn(b); }); },
+  metCat: function (b) { ipcRenderer.send('cat:met', b); },
+  bowlMenu: function () { ipcRenderer.send('bowl:menu'); },
+  setSound: function (on) { ipcRenderer.send('sound:set', !!on); },
+  onSummon: function (fn) { ipcRenderer.on('summon', function () { fn(); }); },
+  notice: function (text) { ipcRenderer.send('notice', text); },
+  onNotice: function (fn) { ipcRenderer.on('notice', function (e, t) { fn(t); }); },
+});
