@@ -509,7 +509,7 @@ const RULES = {
 };
 
 const APP_INFO = {
-  version: '1.0',
+  version: '0.1.0 베타',
   author: 'momdi',
   home: 'https://www.heymomdi.com/',
   mail: 'merrymerim@gmail.com',

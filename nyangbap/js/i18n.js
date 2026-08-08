@@ -5,7 +5,7 @@
 const I18N_TEXT = {
   ko: {
     appName: '츄두리스트',
-    docTitle: '츄두리스트 — 오늘의 할 일',
+    docTitle: '츄두리스트 (베타) — 오늘의 할 일',
 
     /* 재화 */
     currency: '사료',

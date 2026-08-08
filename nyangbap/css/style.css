@@ -598,7 +598,7 @@ a.set-row:hover .set-v { color: var(--clay); }
 .tabs {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   border-top: 1px solid var(--line);
   background: var(--ivory);
   padding-bottom: env(safe-area-inset-bottom);

@@ -7,7 +7,7 @@ const path = require('path');
 
 const ROOT = __dirname;
 const NAME = 'ChewDoList';
-const DISPLAY = '츄두리스트';
+const DISPLAY = '츄두리스트 베타';
 const VERSION = require('./package.json').version;
 const OUT = path.join(ROOT, 'dist');
 const APP = path.join(OUT, NAME + '.app');
