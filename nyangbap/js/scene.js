@@ -84,7 +84,7 @@ const Scene = (function () {
       photographed: false,
       gifted: false,
       napping: false,
-      alpha: breed === 'ghost' ? 0.72 : 1,
+      alpha: (typeof coatOf === 'function' ? coatOf(breed) : breed) === 'ghost' ? 0.78 : 1,
       newbie: !!o.newbie,
     };
     visitors.push(cat);

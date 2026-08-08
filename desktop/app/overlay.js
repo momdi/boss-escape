@@ -4,6 +4,8 @@
    클릭을 받고, 나머지 영역은 뒤 창으로 클릭이 통과된다.
    =========================================================== */
 
+window.onerror = function (m, s, l, c) { console.log('ERR ' + m + ' @' + l + ':' + c); };
+
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 
@@ -12,8 +14,20 @@ let st = null;                 /* 메인 프로세스 상태 */
 let k = 4;                     /* 픽셀 배율 */
 let interactive = false;
 
-const BREEDS = ['cheese','mackerel','calico','tuxedo','white','black',
-                'smoke','siam','fluff','golden','ghost','king','berry'];
+const RARITY_W = { common: 100, rare: 22, legend: 4 };
+
+/** 도감 전체에서 희귀도 가중치로 한 마리 고른다 */
+function pickBreed() {
+  if (typeof CATS === 'undefined' || !CATS.length) return 'cheese';
+  let total = 0;
+  for (const c of CATS) total += RARITY_W[c.rarity] || 1;
+  let roll = Math.random() * total;
+  for (const c of CATS) {
+    roll -= RARITY_W[c.rarity] || 1;
+    if (roll <= 0) return c.id;
+  }
+  return CATS[0].id;
+}
 
 function resize() {
   DPR = Math.min(2, window.devicePixelRatio || 1);
@@ -51,27 +65,54 @@ function drawBowl() {
   ctx.drawImage(b.sp.canvas, b.x, b.y, b.w, b.h);
 
   const n = Math.min(KIBBLE_SPOTS.length, (st && st.food) ? st.food.n : 0);
+  const sp = (st && st.food) ? (st.food.special || 0) : 0;
   for (let i = 0; i < n; i++) {
     const s = KIBBLE_SPOTS[i];
-    ctx.drawImage(KIBBLE.canvas, b.x + s[0] * b.kb, b.y + s[1] * b.kb,
-                  KIBBLE.w * b.kb, KIBBLE.h * b.kb);
+    const gold = i < sp;
+    const spr = gold ? KIBBLE_SPECIAL : KIBBLE;
+    if (gold) {
+      ctx.save();
+      ctx.globalAlpha = 0.35 + 0.35 * Math.sin(perf * 3 + i);
+      ctx.fillStyle = '#ffe9a8';
+      ctx.beginPath();
+      ctx.arc(b.x + (s[0] + 2) * b.kb, b.y + (s[1] + 2) * b.kb, b.kb * 3.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.drawImage(spr.canvas, b.x + s[0] * b.kb, b.y + s[1] * b.kb,
+                  spr.w * b.kb, spr.h * b.kb);
   }
+}
+
+/* 밥그릇에서 떨어질 거리 (고양이 몸 크기 기준) */
+function standOff(breed, wide) {
+  const set = catSprites(breed);
+  const s = (k * 26 * (set.sizeMul || 1)) / set.stand.w;
+  const w = set.stand.w * s;
+  return (w * (wide ? 0.40 : 0.26)) / W;      /* 머리가 밥그릇 위에 오도록 */
 }
 
 /* ---------- 방문객 ---------- */
 
 const visitors = [];
 let spawnTimer = 6;
+let catSeq = 0;
+let reportTimer = 0;
 
 function spawn(breed) {
   if (visitors.length >= 3) return null;
-  const left = Math.random() < 0.5;
+  /* 밥그릇에서 조금 떨어진 곳에서 걸어 나온다 (화면 끝은 너무 멀다) */
+  const away = 0.16 + Math.random() * 0.08;
+  let from = bowl.x + (Math.random() < 0.5 ? -away : away);
+  if (from < 0.02 || from > 0.98) from = bowl.x - (from > 0.98 ? away : -away);
+  const left = from < bowl.x;
   const side = Math.random() < 0.5 ? 1 : -1;
   const c = {
+    id: 'c' + (++catSeq),
     breed: breed,
-    x: left ? -0.12 : 1.12,
+    x: Math.min(0.98, Math.max(0.02, from)),
     y: bowl.y + (Math.random() - 0.5) * 0.03,
-    tx: bowl.x + side * 0.055,
+    tx: bowl.x + side * standOff(breed, false),
     dir: left ? 1 : -1,
     state: 'enter', t: 0, trav: 0,
     ate: 0, wants: 2 + Math.floor(Math.random() * 2),
@@ -81,17 +122,29 @@ function spawn(breed) {
     alpha: breed === 'ghost' ? 0.75 : 1,
   };
   visitors.push(c);
-  play('meow');
-  if (window.desk) window.desk.metCat(breed);
   return c;
 }
 
 function update(dt) {
+  /* 선물 메뉴가 쓸 수 있게 현재 냥이를 알려 준다 */
+  reportTimer -= dt;
+  if (reportTimer <= 0) {
+    reportTimer = 0.6;
+    if (window.desk) {
+      window.desk.reportCats(visitors
+        .filter(function (v) { return v.state === 'rest' || v.state === 'eat'; })
+        .map(function (v) { return { id: v.id, breed: v.breed }; }));
+    }
+  }
+
   spawnTimer -= dt;
   if (spawnTimer <= 0) {
-    spawnTimer = 28 + Math.random() * 50;      /* 자주 오가지 않게 */
+    /* 아무도 없으면 조금 빨리, 이미 있으면 아주 느긋하게 */
+    spawnTimer = visitors.length === 0
+      ? 14 + Math.random() * 20
+      : 60 + Math.random() * 80;
     if (st && st.food && st.food.n > 0 && visitors.length < 3) {
-      spawn(BREEDS[Math.floor(Math.random() * BREEDS.length)]);
+      spawn(pickBreed());
     }
   }
 
@@ -99,6 +152,7 @@ function update(dt) {
 
   for (let i = visitors.length - 1; i >= 0; i--) {
     const c = visitors[i];
+    if (c.dragging) { c.t += dt; continue; }     /* 들려 있는 동안엔 가만히 */
     c.t += dt;
     if (c.jump > 0) c.jump = Math.max(0, c.jump - dt);
     /* 밥이 없으면 느긋하게 걷는다 */
@@ -107,7 +161,7 @@ function update(dt) {
     if (c.state === 'enter') {
       /* 밥그릇이 움직이면 목표도 따라간다 */
       const side = c.tx > bowl.x ? 1 : -1;
-      c.tx = bowl.x + side * 0.055;
+      c.tx = bowl.x + side * standOff(c.breed, false);
       c.y += (bowl.y - c.y) * Math.min(1, dt * 1.5);
       const d = c.tx - c.x;
       c.dir = d > 0 ? 1 : -1;
@@ -120,13 +174,17 @@ function update(dt) {
         c.dir = c.x > bowl.x ? -1 : 1;
         c.waiting = c.state === 'rest';
         c.t = 0; c.bite = 0;
-        if (!c.waiting) play('meow');
+        if (!c.arrived) {
+          c.arrived = true;
+          play('meow');
+          if (window.desk) window.desk.metCat(c.breed);   /* 도착했을 때 알린다 */
+        }
       }
     } else if (c.state === 'eat') {
       /* 밥그릇을 옮기면 따라간다 */
       const side = c.x > bowl.x ? 1 : -1;
-      const want = bowl.x + side * 0.055;
-      if (Math.abs(want - c.x) > 0.01) { c.state = 'enter'; c.t = 0; continue; }
+      const want = bowl.x + side * standOff(c.breed, false);
+      if (Math.abs(want - c.x) > 0.012) { c.state = 'enter'; c.t = 0; continue; }
       c.y += (bowl.y - c.y) * Math.min(1, dt * 2);
       c.bite = (c.bite || 0) + dt;
       if (c.bite >= 3.0) {
@@ -165,7 +223,7 @@ function update(dt) {
     } else if (c.state === 'leave') {
       c.x += c.dir * speed * dt;
       c.trav += speed * dt;
-      if (c.x < -0.2 || c.x > 1.2) visitors.splice(i, 1);
+      if (c.x < -0.16 || c.x > 1.16) visitors.splice(i, 1);
     }
   }
 }
@@ -175,6 +233,22 @@ function startLeave(c) {
   c.state = 'leave';
   c.napping = false; c.act = null; c.actT = 0; c.waiting = false;
   c.dir = c.x > 0.5 ? 1 : -1;
+}
+
+/* 선물 받은 냥이: 신나게 놀고 하트가 퐁퐁 */
+function giftReact(catId) {
+  const c = visitors.find(function (v) { return v.id === catId; }) || visitors[0];
+  if (!c) return;
+  c.napping = false;
+  c.waiting = false;
+  c.jump = 0.52;
+  c.heart = 1.6;
+  if (catSprites(c.breed).play) { c.act = 'play'; c.actT = 3.0; }
+  c.hearts = [];
+  for (let i = 0; i < 5; i++) {
+    c.hearts.push({ t: -i * 0.22, x: (Math.random() - 0.5) * 0.9 });
+  }
+  play('gift');
 }
 
 /* ---------- 밥그릇 옆 알림 ---------- */
@@ -261,6 +335,12 @@ function drawCat(c) {
     sqy = 1 + Math.sin(c.t * 1.6) * 0.012;
   }
 
+  if (c.dragging) {
+    bob -= k * 5;
+    rot += Math.sin(perf * 6) * 0.06;
+    sqy *= 1.03;
+  }
+
   if (c.jump > 0) {
     const u = 1 - c.jump / 0.52;
     const air = Math.sin(Math.PI * u);
@@ -308,6 +388,28 @@ function drawCat(c) {
     ctx.restore();
   }
 
+  if (c.hearts && c.hearts.length) {
+    ctx.save();
+    ctx.fillStyle = '#d4685a';
+    for (let i = c.hearts.length - 1; i >= 0; i--) {
+      const hh = c.hearts[i];
+      hh.t += lastDt;
+      if (hh.t < 0) continue;
+      if (hh.t > 1.6) { c.hearts.splice(i, 1); continue; }
+      const u = hh.t / 1.6;
+      ctx.globalAlpha = Math.max(0, 1 - u);
+      const hx = Math.round(cx + hh.x * w * 0.4);
+      const hy = Math.round(by - h - k * 2 - u * k * 14);
+      const s2 = k * 0.8;
+      ctx.fillRect(hx, hy + s2, s2 * 2, s2 * 2);
+      ctx.fillRect(hx + s2 * 3, hy + s2, s2 * 2, s2 * 2);
+      ctx.fillRect(hx, hy + s2 * 2, s2 * 5, s2 * 2);
+      ctx.fillRect(hx + s2, hy + s2 * 4, s2 * 3, s2);
+      ctx.fillRect(hx + s2 * 2, hy + s2 * 5, s2, s2);
+    }
+    ctx.restore();
+  }
+
   if (c.heart > 0) {
     c.heart -= 1 / 60;
     const t = 1 - c.heart / 1.4;
@@ -334,12 +436,14 @@ function draw() {
 }
 
 let lastDt = 0;
+let perf = 0;
 
 let last = 0;
 function loop(ts) {
   const dt = Math.min(0.05, (ts - last) / 1000 || 0);
   last = ts;
   lastDt = dt;
+  perf += dt;
   update(dt);
   draw();
   requestAnimationFrame(loop);
@@ -380,8 +484,16 @@ window.addEventListener('mousemove', function (e) {
     bowl.moved = true;
     return;
   }
+  if (dragCat) {
+    dragCat.x = Math.min(0.99, Math.max(0.01, (px - dragCat.dx) / W));
+    dragCat.y = Math.min(0.99, Math.max(0.08, (py - dragCat.dy) / H));
+    dragCat.dragMoved = true;
+    return;
+  }
   setInteractive(hitBowl(px, py) || !!hitCat(px, py));
 });
+
+let dragCat = null;
 
 window.addEventListener('mousedown', function (e) {
   if (e.button !== 0) return;                 /* 좌클릭만 드래그 */
@@ -392,14 +504,40 @@ window.addEventListener('mousedown', function (e) {
     bowl.moved = false;
     bowl.dx = px - (b.x + b.w / 2);
     bowl.dy = py - (b.y + b.h);
+    return;
+  }
+  const c = hitCat(px, py);
+  if (c) {
+    dragCat = c;
+    c.dragging = true;
+    c.napping = false;
+    c.dragMoved = false;
+    c.dx = px - c.x * W;
+    c.dy = py - c.y * H;
   }
 });
+
+function dropCat() {
+  if (!dragCat) return;
+  const c = dragCat;
+  dragCat = null;
+  c.dragging = false;
+  if (c.dragMoved) {
+    /* 내려놓으면 톡 착지한 뒤 밥그릇 쪽으로 다시 걸어간다 */
+    c.jump = 0.3;
+    c.state = 'enter';
+    c.waiting = false;
+    c.t = 0;
+    play('meow');
+  }
+}
 
 window.addEventListener('mouseup', function () {
   if (bowl.drag) {
     bowl.drag = false;
     if (bowl.moved && window.desk) window.desk.moveBowl({ x: bowl.x, y: bowl.y });
   }
+  dropCat();
 });
 
 let clickTimer = null;
@@ -416,6 +554,7 @@ window.addEventListener('click', function (e) {
   }
   const c = hitCat(px, py);
   if (c) {
+    if (c.dragMoved) { c.dragMoved = false; return; }
     c.napping = false;
     c.jump = 0.52;
     c.heart = 1.4;
@@ -431,6 +570,7 @@ function set_has(c, kind) {
 }
 
 function cancelDrag() {
+  dropCat();
   if (!bowl.drag) return;
   bowl.drag = false;
   bowl.moved = false;
@@ -440,6 +580,15 @@ function cancelDrag() {
 window.addEventListener('contextmenu', function (e) {
   const px = e.clientX * DPR, py = e.clientY * DPR;
   cancelDrag();
+  const c = hitCat(px, py);
+  if (c) {
+    e.preventDefault();
+    const info = (typeof CAT_BY_ID !== 'undefined') && CAT_BY_ID[c.breed];
+    if (window.desk) {
+      window.desk.catMenu({ id: c.id, breed: c.breed, name: info ? info.species : c.breed });
+    }
+    return;
+  }
   if (!hitBowl(px, py)) return;
   e.preventDefault();
   if (window.desk) window.desk.bowlMenu();
@@ -464,7 +613,10 @@ function applyState(s) {
   st = s;
   if (s.bowl && !bowl.drag) { bowl.x = s.bowl.x; bowl.y = s.bowl.y; }
   if (typeof Sound !== 'undefined') Sound.setEnabled(s.sound !== false);
-  if (!first && s.food && s.food.n > prevFood) play('drop');
+  if (!first && s.food && s.food.n > prevFood) {
+    play('drop');
+    if (prevFood === 0 && visitors.length === 0) spawnTimer = Math.min(spawnTimer, 4);
+  }
 }
 
 /* 사운드: 상태가 켜져 있을 때만 */
@@ -475,8 +627,15 @@ function play(name) {
 }
 if (window.desk) {
   window.desk.onNotice(showNotice);
+  window.desk.onGiftDone(function (p) {
+    if (p && p.summon) {
+      spawn(pickBreed());
+      return;
+    }
+    giftReact(p && p.id);
+  });
   window.desk.onSummon(function () {
-    spawn(BREEDS[Math.floor(Math.random() * BREEDS.length)]);
+    spawn(pickBreed());
   });
   window.desk.onState(applyState);
   window.desk.getState().then(applyState);

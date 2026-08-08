@@ -12,14 +12,14 @@
 }
 
 :root {
-  --ivory: #efe8da;
-  --ivory-hi: #f4eee3;
-  --ivory-lo: #e7dfcf;
-  --ink: #38332d;
-  --ink-mid: #7d7365;
-  --ink-dim: #aaa093;
-  --line: #ddd3c1;
-  --line-soft: #e5dccb;
+  --ivory: #faf8f4;
+  --ivory-hi: #ffffff;
+  --ivory-lo: #f2efe8;
+  --ink: #3a3630;
+  --ink-mid: #857d70;
+  --ink-dim: #b3ab9e;
+  --line: #e6e1d8;
+  --line-soft: #efebe4;
   --clay: #a9714a;
   --clay-hi: #c08a5e;
   --desk: #d9cfbe;
@@ -805,8 +805,8 @@ a.set-row:hover .set-v { color: var(--clay); }
   flex-direction: column;
   gap: 4px;
   padding: 6px;
-  background: #f7f2e6;
-  border: 1px solid #c9bda6;
+  background: #ffffff;
+  border: 1px solid #ddd8ce;
   border-radius: 10px;
   box-shadow: 0 4px 14px rgba(60, 48, 32, 0.18);
 }
@@ -821,9 +821,9 @@ a.set-row:hover .set-v { color: var(--clay); }
   text-align: left;
   cursor: pointer;
 }
-.feed-menu button:hover { background: #eee6d2; }
+.feed-menu button:hover { background: #f2efe8; }
 .feed-menu button.on {
-  background: #e8dec6;
+  background: #eae5db;
   font-weight: 700;
 }
 
@@ -831,15 +831,15 @@ a.set-row:hover .set-v { color: var(--clay); }
 .set-go {
   width: 100%;
   padding: 12px;
-  border: 1px solid #c9bda6;
-  background: #f7f2e6;
+  border: 1px solid #ddd8ce;
+  background: #ffffff;
   color: #4a4038;
   font: inherit;
   font-size: 14px;
   border-radius: 10px;
   cursor: pointer;
 }
-.set-go:active { background: #eee6d2; }
+.set-go:active { background: #f2efe8; }
 
 
 /* ===== 씬: 방 배경 없이 아이보리 ===== */
@@ -862,8 +862,8 @@ a.set-row:hover .set-v { color: var(--clay); }
   white-space: nowrap;
   font-size: 11px;
   color: #4a4038;
-  background: #f7f2e6;
-  border: 1px solid #c9bda6;
+  background: #ffffff;
+  border: 1px solid #ddd8ce;
   border-radius: 7px;
   padding: 4px 8px;
   opacity: 0;
@@ -873,3 +873,35 @@ a.set-row:hover .set-v { color: var(--clay); }
 .sbtn[data-tip]:hover::after,
 .sbtn[data-tip]:focus-visible::after { opacity: 1; }
 .sbtn:disabled[data-tip]::after { display: none; }
+
+/* ===== 헤더 지갑: 사료 / 황금 사료 ===== */
+.hd-wallet { display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
+.hd-coin { display: flex; align-items: center; gap: 5px; line-height: 1; }
+.hd-coin-ico { width: 14px; height: 14px; display: block; }
+.hd-coin-ico canvas { display: block; width: 100%; height: 100%; }
+.hd-coin-label { font-size: 10px; font-weight: 500; color: var(--ink-mid); letter-spacing: 0.02em; }
+.hd-coin-num { font-size: 15px; font-weight: 700; min-width: 18px; text-align: right; }
+.hd-coin-gold .hd-coin-num { color: #b98a1e; }
+.hd-coin.empty { opacity: 0.42; }
+.hd-food:hover .hd-coin-num { color: var(--clay); }
+
+/* ===== 데스크톱 앱: 냥이는 바탕화면에 있으니 씬을 통째로 없앤다 ===== */
+.is-desktop .scene,
+.is-desktop .scene-hint,
+.is-desktop .scene-acts,
+.is-desktop .flash { display: none !important; }
+.is-desktop #app {
+  border: 0;
+  box-shadow: none;
+  height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+}
+.is-desktop .page { padding-top: 14px; }
+.is-desktop .toast { display: none; }
+
+/* ===== 데스크톱: 메뉴를 위로 (헤더 → 탭 → 목록) ===== */
+.is-desktop #app > .hd    { order: 0; }
+.is-desktop #app > .tabs  { order: 1; }
+.is-desktop #app > .page  { order: 2; }
+.is-desktop .tabs { border-top: 0; border-bottom: 1px solid var(--line); }

@@ -17,6 +17,7 @@ const UI = (function () {
 
   function cache() {
     ['hdDate', 'hdKibble', 'hdBowlIcon', 'hdSpecial', 'hdSpecialNum', 'hdFood', 'hdGear',
+      'hdKibbleIco', 'hdSpecialIco',
       'todoList', 'addForm', 'addInput', 'albumGrid', 'albumCount', 'shopList',
       'tabs', 'toast', 'sheetWrap', 'sheet', 'sheetDim', 'camBtn', 'giftBtn',
       'sceneHint', 'scene', 'pageHome', 'pageLog', 'pageAlbum', 'pageShop', 'pageSet',
@@ -40,17 +41,15 @@ const UI = (function () {
   function renderHeader() {
     const s = State.data;
     el.hdDate.textContent = T.dateLabel();
-    el.hdKibble.textContent = pad3(s.kibble);
+    el.hdKibble.textContent = s.kibble;
+    el.hdSpecialNum.textContent = s.special;
+
+    if (!el.hdKibbleIco.firstChild) el.hdKibbleIco.appendChild(spriteEl(KIBBLE, 14));
+    if (!el.hdSpecialIco.firstChild) el.hdSpecialIco.appendChild(spriteEl(KIBBLE_SPECIAL, 14));
+    el.hdSpecial.classList.toggle('empty', s.special <= 0);
 
     el.hdBowlIcon.innerHTML = '';
     el.hdBowlIcon.appendChild(bowlIconEl(s.bowl, s.food.n, 30));
-
-    if (s.special > 0) {
-      el.hdSpecial.hidden = false;
-      el.hdSpecialNum.textContent = s.special;
-    } else {
-      el.hdSpecial.hidden = true;
-    }
   }
 
   /* ================= 할 일 ================= */
@@ -289,8 +288,10 @@ const UI = (function () {
         btn.disabled = s.bowl === it.id;
         btn.dataset.use = it.id;
       } else {
-        btn.textContent = T.t('buyPrice', { n: it.price });
-        btn.disabled = s.kibble < it.price;
+        btn.textContent = it.gold
+          ? T.t('buyPriceGold', { n: it.price })
+          : T.t('buyPrice', { n: it.price });
+        btn.disabled = it.gold ? s.special < it.price : s.kibble < it.price;
         btn.dataset.buy = it.id;
       }
       row.appendChild(btn);

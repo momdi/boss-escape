@@ -1,8 +1,60 @@
 {
-  "name": "chewdolist-desktop",
+  "name": "chewdolist",
   "version": "0.1.0",
   "description": "츄두리스트 데스크톱 — 바탕화면 위 길냥이",
   "main": "main.js",
-  "scripts": { "start": "electron ." },
-  "devDependencies": { "electron": "^33.0.0" }
+  "scripts": {
+    "start": "electron .",
+    "stage": "node build.js",
+    "dist": "node build.js && electron-builder --project build --mac --publish never",
+    "dist:win": "node build.js && electron-builder --project build --win --publish never",
+    "pack": "node pack.js"
+  },
+  "devDependencies": {
+    "electron": "33.4.11",
+    "electron-builder": "^26.15.3"
+  },
+  "productName": "ChewDoList",
+  "author": "momdi",
+  "build": {
+    "appId": "com.momdi.chewdolist",
+    "productName": "ChewDoList",
+    "directories": {
+      "output": "../dist"
+    },
+    "files": [
+      "**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "app/img/icon-512.png",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "extendInfo": {
+        "CFBundleDisplayName": "츄두리스트",
+        "CFBundleName": "츄두리스트"
+      }
+    },
+    "dmg": {
+      "title": "ChewDoList"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "app/img/icon-512.png"
+    },
+    "electronVersion": "33.4.11",
+    "asar": false
+  }
 }

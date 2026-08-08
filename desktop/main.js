@@ -8,6 +8,15 @@ const path = require('path');
 const fs = require('fs');
 
 const STORE = path.join(app.getPath('userData'), 'state.json');
+const LOGF = path.join(app.getPath('userData'), 'run.log');
+function log() {
+  try {
+    fs.appendFileSync(LOGF, Array.prototype.join.call(arguments, ' ') + '\n');
+  } catch (e) { /* 무시 */ }
+}
+process.on('uncaughtException', function (e) { log('UNCAUGHT', e && e.stack); });
+app.on('will-quit', function () { log('will-quit'); });
+app.on('window-all-closed', function () { log('all-closed'); });
 
 const DEFAULT_STATE = {
   kibble: 0,
@@ -22,6 +31,7 @@ const DEFAULT_STATE = {
 
 let state = null;
 let overlay = null;
+let catsHere = [];
 let memo = null;
 
 function today() {
@@ -78,6 +88,12 @@ function createOverlay() {
   overlay.setAlwaysOnTop(true, 'screen-saver');
   overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   overlay.setIgnoreMouseEvents(true, { forward: true });   /* 기본은 클릭 통과 */
+  overlay.webContents.on('console-message', function (e, level, msg, line, src) {
+    console.log('[overlay]', msg, '(' + String(src).split('/').pop() + ':' + line + ')');
+  });
+  overlay.webContents.on('render-process-gone', function (e, d) {
+    console.log('[overlay] GONE', JSON.stringify(d));
+  });
   overlay.loadFile(path.join(__dirname, 'app', 'overlay.html'));
 }
 
@@ -92,7 +108,7 @@ function createMemo(show) {
     title: '츄두리스트',
     resizable: true,
     show: show !== false,
-    backgroundColor: '#f4eee3',
+    backgroundColor: '#faf8f4',
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   memo.loadFile(path.join(__dirname, 'app', 'web', 'index.html'));
@@ -123,6 +139,7 @@ function toMemo(channel, payload) {
 
 ipcMain.on('bowl:feed', function (e, mode) { toMemo('feed', mode || 'full'); });
 ipcMain.on('food:eat', function () { toMemo('eat'); });
+ipcMain.on('cats:here', function (e, list) { catsHere = list || []; });
 
 /* 웹 앱이 알려 준 사료·밥 상태를 오버레이에 전달 */
 ipcMain.on('state:push', function (e, snap) {
@@ -130,6 +147,7 @@ ipcMain.on('state:push', function (e, snap) {
   state.special = snap.special;
   state.food = snap.food;
   state.cap = snap.cap;
+  state.gifts = snap.gifts || [];
   broadcast();
 });
 
@@ -142,15 +160,42 @@ ipcMain.on('notice', function (e, text) {
 
 ipcMain.on('sound:set', function (e, on) { state.sound = !!on; broadcast(); });
 
+/* 고양이 우클릭 메뉴 — 선물 주기 */
+ipcMain.on('cat:menu', function (e, cat) {
+  const gifts = state.gifts || [];
+  const items = [{ label: cat.name, enabled: false }, { type: 'separator' }];
+  if (!gifts.length) {
+    items.push({ label: '상점에서 선물을 사 보세요', enabled: false });
+  } else {
+    gifts.forEach(function (g) {
+      items.push({
+        label: g.name + ' × ' + g.n,
+        click: function () {
+          toMemo('gift', { id: g.id, breed: cat.breed });
+          if (overlay && !overlay.isDestroyed()) {
+            overlay.webContents.send('giftDone', { id: cat.id, summon: g.summon });
+          }
+        },
+      });
+    });
+  }
+  items.push({ type: 'separator' });
+  items.push({ label: '할 일 창 열기', click: function () { createMemo(); } });
+  Menu.buildFromTemplate(items).popup({ window: overlay });
+});
+
 /* 밥그릇 우클릭 메뉴 */
 ipcMain.on('bowl:menu', function () {
   const menu = Menu.buildFromTemplate([
     { label: '지금 밥 주기', click: function () { toMemo('feed', state.feedMode); } },
+    { label: '황금 사료 담기' + (state.special ? ' (' + state.special + ')' : ''),
+      enabled: !!state.special,
+      click: function () { toMemo('feedSpecial'); } },
     { type: 'separator' },
     { label: '가득 채우기', type: 'radio', checked: state.feedMode !== 'one',
-      click: function () { state.feedMode = 'full'; broadcast(); toMemo('feed', 'full'); } },
+      click: function () { state.feedMode = 'full'; broadcast(); } },
     { label: '한 알만 채우기', type: 'radio', checked: state.feedMode === 'one',
-      click: function () { state.feedMode = 'one'; broadcast(); toMemo('feed', 'one'); } },
+      click: function () { state.feedMode = 'one'; broadcast(); } },
     { type: 'separator' },
     { label: '할 일 창 열기', click: function () { createMemo(); } },
     { label: '냥이 부르기', click: function () {
@@ -167,9 +212,13 @@ ipcMain.on('bowl:menu', function () {
 ipcMain.on('cat:met', function (e, breed) { toMemo('met', breed); });
 
 app.whenReady().then(function () {
+  log('=== ready ===', process.version, process.versions.electron);
   loadState();
+  log('state loaded');
   createOverlay();
+  log('overlay ok');
   createMemo();
+  log('memo ok');
 });
 
 app.on('before-quit', function () { app.isQuitting = true; });

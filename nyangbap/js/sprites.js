@@ -27,7 +27,7 @@ function makeSprite(rows, pal) {
 /* ================= 고양이 이미지 스프라이트 ================= */
 
 /* 그림 파일을 교체하면 이 숫자를 올린다 (브라우저 캐시 무효화) */
-const IMG_VER = 3;
+const IMG_VER = 4;
 
 /* 품종 → 시트 에셋 (stand: 서있기 / loaf: 식빵, 없으면 stand 사용) */
 const CAT_ASSETS = {
@@ -48,6 +48,13 @@ const CAT_ASSETS = {
 
 const _catCache = {};
 
+/** 냥이 id → 털 종류(스프라이트가 있는 기본 품종) */
+function coatOf(breed) {
+  if (CAT_ASSETS[breed]) return breed;
+  const info = (typeof CAT_BY_ID !== 'undefined') && CAT_BY_ID[breed];
+  return (info && info.coat) || 'cheese';
+}
+
 /** 스프라이트 슬롯: canvas는 즉시 만들고, 이미지가 로드되면 그려 넣는다 */
 function _imgSprite(file, w, h) {
   const cv = document.createElement('canvas');
@@ -66,27 +73,35 @@ function _imgSprite(file, w, h) {
   return sp;
 }
 
-/** 도감용 얼굴: stand에서 머리 쪽을 잘라 쓴다.
-    faceRight면 오른쪽 절반이 머리다. 전부 오른쪽을 보도록 맞춘다. */
+/** 도감용 얼굴: 어떤 품종이든 같은 크기의 정사각 썸네일로 만든다 */
+const PORTRAIT_PX = 128;
 function _portraitSprite(standSp, faceRight) {
-  const cw = Math.round(standSp.w * 0.52);
-  const chh = Math.round(standSp.h * 0.66);
   const cv = document.createElement('canvas');
-  cv.width = cw;
-  cv.height = chh;
-  const sp = { canvas: cv, w: cw, h: chh };
+  cv.width = PORTRAIT_PX;
+  cv.height = PORTRAIT_PX;
+  const sp = { canvas: cv, w: PORTRAIT_PX, h: PORTRAIT_PX };
   const draw = function () {
     const c = cv.getContext('2d');
     c.imageSmoothingEnabled = false;
-    c.clearRect(0, 0, cw, chh);
+    c.clearRect(0, 0, PORTRAIT_PX, PORTRAIT_PX);
+
+    /* 머리 쪽을 잘라 낸다 (오른쪽을 보는 원본은 오른쪽이 머리) */
+    const cw = Math.round(standSp.w * 0.52);
+    const ch = Math.round(standSp.h * 0.66);
     const sx = faceRight ? standSp.w - cw : 0;
     const sy = Math.round(standSp.h * 0.04);
+
+    /* 잘라낸 조각을 정사각 안에 꽉 차게 (품종마다 같은 크기로 보인다) */
+    const fit = PORTRAIT_PX * 0.94;
+    const r = Math.min(fit / cw, fit / ch);
+    const dw = Math.round(cw * r);
+    const dh = Math.round(ch * r);
+    const dx = Math.round((PORTRAIT_PX - dw) / 2);
+    const dy = Math.round((PORTRAIT_PX - dh) / 2);
+
     c.save();
-    if (!faceRight) {            /* 왼쪽을 보는 원본은 뒤집어 방향을 통일 */
-      c.translate(cw, 0);
-      c.scale(-1, 1);
-    }
-    c.drawImage(standSp.canvas, sx, sy, cw, chh, 0, 0, cw, chh);
+    if (!faceRight) { c.translate(PORTRAIT_PX, 0); c.scale(-1, 1); }
+    c.drawImage(standSp.canvas, sx, sy, cw, ch, faceRight ? dx : PORTRAIT_PX - dx - dw, dy, dw, dh);
     c.restore();
   };
   const t = setInterval(function () {
@@ -97,8 +112,9 @@ function _portraitSprite(standSp, faceRight) {
 
 /** 품종 스프라이트 세트 (캐시): { stand, loaf, portrait } */
 function catSprites(breed) {
-  if (_catCache[breed]) return _catCache[breed];
-  const a = CAT_ASSETS[breed] || CAT_ASSETS.cheese;
+  const coat = coatOf(breed);
+  if (_catCache[coat]) return _catCache[coat];
+  const a = CAT_ASSETS[coat] || CAT_ASSETS.cheese;
   const stand = _imgSprite(a.stand[0], a.stand[1], a.stand[2]);
   const loaf = a.loaf ? _imgSprite(a.loaf[0], a.loaf[1], a.loaf[2]) : stand;
   const set = {
@@ -111,7 +127,7 @@ function catSprites(breed) {
     walk: null,
     eat: null,
   };
-  const anim = CAT_ANIM[breed];
+  const anim = CAT_ANIM[coat];
   if (anim) {
     ['walk', 'eat', 'groom', 'meow', 'play', 'sleep'].forEach(function (kind) {
       if (!anim[kind]) return;
@@ -121,7 +137,7 @@ function catSprites(breed) {
       };
     });
   }
-  _catCache[breed] = set;
+  _catCache[coat] = set;
   return set;
 }
 

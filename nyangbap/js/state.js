@@ -237,8 +237,13 @@ const State = (function () {
     const item = bowl || gift;
     if (!item) return { ok: false };
     if (bowl && s.bowls.indexOf(id) >= 0) return { ok: false, reason: T.t('already') };
-    if (s.kibble < item.price) return { ok: false, reason: T.t('notEnough') };
-    s.kibble -= item.price;
+    if (item.gold) {
+      if (s.special < item.price) return { ok: false, reason: T.t('notEnoughGold') };
+      s.special -= item.price;
+    } else {
+      if (s.kibble < item.price) return { ok: false, reason: T.t('notEnough') };
+      s.kibble -= item.price;
+    }
     if (bowl) {
       s.bowls.push(id);
       s.bowl = id;
