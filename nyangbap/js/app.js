@@ -115,7 +115,8 @@
     Array.prototype.forEach.call(el.tabs.children, function (b) {
       b.classList.toggle('on', b.dataset.tab === next);
     });
-    el.hdGear.classList.toggle('on', next === 'set');
+    el.hdShop.classList.toggle('on', next === 'shop');
+    el.hdAlbum.classList.toggle('on', next === 'album');
     el.scene.style.display = next === 'home' ? '' : 'none';
     el.pageHome.hidden = next !== 'home';
     el.pageLog.hidden = next !== 'log';
@@ -529,6 +530,7 @@
     T.apply();
     UI.renderHeader();
     UI.renderTodos();
+    UI.renderNotes();
     UI.renderScene();
     if (tab === 'log') UI.renderCalendar();
     if (tab === 'album') UI.renderAlbum();
@@ -575,6 +577,17 @@
       }
     });
 
+    el.noteForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const v = el.noteInput.value;
+      if (!v.trim()) return;
+      State.addNote(v, el.noteDue.value || '');
+      el.noteInput.value = '';
+      el.noteDue.value = '';
+      Sound.play('tap');
+      UI.renderNotes();
+    });
+
     el.addForm.addEventListener('submit', function (e) {
       e.preventDefault();
       const v = el.addInput.value;
@@ -607,9 +620,13 @@
     });
     el.camBtn.addEventListener('click', function (e) { e.stopPropagation(); shoot(); });
     el.giftBtn.addEventListener('click', function (e) { e.stopPropagation(); giftSheet(); });
-    el.hdGear.addEventListener('click', function () {
+    el.hdShop.addEventListener('click', function () {
       Sound.play('tap');
-      setTab(tab === 'set' ? 'home' : 'set');
+      setTab('shop');
+    });
+    el.hdAlbum.addEventListener('click', function () {
+      Sound.play('tap');
+      setTab('album');
     });
 
     // 탭
@@ -724,6 +741,7 @@
     bind();
     UI.renderHeader();
     UI.renderTodos();
+    UI.renderNotes();
     UI.renderScene();
     setTab('home');
     Scene.start();

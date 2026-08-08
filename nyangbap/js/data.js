@@ -487,11 +487,12 @@ GIFTS.forEach(function (g) { GIFT_BY_ID[g.id] = g; });
 /* ================= 기본 할 일 ================= */
 
 const DEFAULT_TODOS = [
-  { text: '물 마시기', text_en: 'Drink water', star: false },
-  { text: '스트레칭 10분 하기', text_en: 'Stretch for 10 min', star: false },
-  { text: '책 20분 읽기', text_en: 'Read for 20 min', star: true },
-  { text: '영양제 챙겨 먹기', text_en: 'Take vitamins', star: false },
-  { text: '일기 쓰기', text_en: 'Write a journal', star: false },
+  { text: '① 밥그릇을 눌러 밥을 담아 보세요', text_en: '1. Tap the bowl to fill it', star: false },
+  { text: '② 냥이가 오면 사진을 찍어 보세요', text_en: '2. Snap a photo when a cat visits', star: false },
+  { text: '③ 사진을 찍으면 이름을 지어 줄 수 있어요', text_en: '3. Name the cat after the photo', star: false },
+  { text: '④ 별표 할 일을 끝내면 황금 사료가 생겨요', text_en: '4. Star a to-do to earn golden kibble', star: true },
+  { text: '⑤ 상점에서 선물을 사서 냥이에게 주세요', text_en: '5. Buy a gift and give it to a cat', star: false },
+  { text: '⑥ 이 안내는 지우고 내 할 일을 적어 보세요', text_en: '6. Clear these and write your own', star: false },
 ];
 
 /* ================= 규칙 상수 ================= */

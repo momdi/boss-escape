@@ -16,9 +16,9 @@ const UI = (function () {
   };
 
   function cache() {
-    ['hdDate', 'hdKibble', 'hdBowlIcon', 'hdSpecial', 'hdSpecialNum', 'hdFood', 'hdGear',
+    ['hdDate', 'hdKibble', 'hdSpecial', 'hdSpecialNum', 'hdFood', 'hdShop', 'hdAlbum',
       'hdKibbleIco', 'hdSpecialIco',
-      'todoList', 'addForm', 'addInput', 'albumGrid', 'albumCount', 'shopList',
+      'todoList', 'addForm', 'addInput', 'noteList', 'noteForm', 'noteInput', 'noteDue', 'albumGrid', 'albumCount', 'shopList',
       'tabs', 'toast', 'sheetWrap', 'sheet', 'sheetDim', 'camBtn', 'giftBtn',
       'sceneHint', 'scene', 'pageHome', 'pageLog', 'pageAlbum', 'pageShop', 'pageSet',
       'calMonth', 'calGrid', 'calDow', 'calSum', 'calPrev', 'calNext', 'setList'].forEach(function (id) {
@@ -48,8 +48,50 @@ const UI = (function () {
     if (!el.hdSpecialIco.firstChild) el.hdSpecialIco.appendChild(spriteEl(KIBBLE_SPECIAL, 14));
     el.hdSpecial.classList.toggle('empty', s.special <= 0);
 
-    el.hdBowlIcon.innerHTML = '';
-    el.hdBowlIcon.appendChild(bowlIconEl(s.bowl, s.food.n, 30));
+
+  }
+
+  /* ================= 기억할 일 ================= */
+
+  function renderNotes() {
+    const s = State.data;
+    const list = s.notes || [];
+    el.noteList.innerHTML = '';
+    list.forEach(function (n) {
+      const li = document.createElement('li');
+      const dot = document.createElement('i');
+      dot.className = 'note-dot';
+      const sp = document.createElement('span');
+      sp.textContent = n.text;
+
+      let badge = null;
+      const left = State.daysLeft(n.due);
+      if (left !== null) {
+        badge = document.createElement('b');
+        badge.className = 'note-dday';
+        if (left > 0) badge.textContent = T.t('dday', { n: left });
+        else if (left === 0) { badge.textContent = T.t('ddayToday'); badge.classList.add('today'); }
+        else { badge.textContent = T.t('ddayPast', { n: -left }); badge.classList.add('past'); }
+        if (left > 0 && left <= 3) badge.classList.add('soon');
+        badge.title = n.due;
+      }
+
+      const x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'note-x';
+      x.textContent = '\u00d7';
+      x.setAttribute('aria-label', T.t('deleteAria') || 'delete');
+      x.addEventListener('click', function () {
+        State.removeNote(n.id);
+        Sound.play('tap');
+        renderNotes();
+      });
+      li.append(dot, sp);
+      if (badge) li.appendChild(badge);
+      li.appendChild(x);
+      el.noteList.appendChild(li);
+    });
+    el.noteList.hidden = list.length === 0;
   }
 
   /* ================= 할 일 ================= */
@@ -539,6 +581,7 @@ const UI = (function () {
     todoLabel: todoLabel,
     renderHeader: renderHeader,
     renderTodos: renderTodos,
+    renderNotes: renderNotes,
     renderCalendar: renderCalendar,
     calShift: calShift,
     renderAlbum: renderAlbum,

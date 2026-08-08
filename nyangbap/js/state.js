@@ -118,6 +118,42 @@ const State = (function () {
     listeners.forEach(function (fn) { fn(evt || {}); });
   }
 
+  /* ---------- 기억할 일 (날짜와 무관하게 남는다) ---------- */
+
+  function addNote(text, due) {
+    const v = (text || '').trim();
+    if (!v) return null;
+    if (!s.notes) s.notes = [];
+    const n = { id: Date.now() + Math.floor(Math.random() * 1000), text: v.slice(0, 40) };
+    if (due) n.due = due;                     /* 'YYYY-MM-DD' */
+    s.notes.push(n);
+    s.notes.sort(function (a, b) {
+      if (!a.due && !b.due) return 0;
+      if (!a.due) return 1;
+      if (!b.due) return -1;
+      return a.due < b.due ? -1 : 1;
+    });
+    emit({ type: 'note' });
+    return n;
+  }
+
+  /** 오늘 기준 남은 날 (음수면 지남) */
+  function daysLeft(due) {
+    if (!due) return null;
+    const p = due.split('-');
+    const t = new Date(+p[0], +p[1] - 1, +p[2]);
+    const n = new Date();
+    t.setHours(0, 0, 0, 0);
+    n.setHours(0, 0, 0, 0);
+    return Math.round((t - n) / 86400000);
+  }
+
+  function removeNote(id) {
+    if (!s.notes) return;
+    s.notes = s.notes.filter(function (n) { return n.id !== id; });
+    emit({ type: 'note' });
+  }
+
   /* ---------- 할 일 ---------- */
 
   function addTodo(text) {
@@ -340,6 +376,9 @@ const State = (function () {
     on: on,
     emit: emit,
     addTodo: addTodo,
+    addNote: addNote,
+    daysLeft: daysLeft,
+    removeNote: removeNote,
     removeTodo: removeTodo,
     toggleStar: toggleStar,
     toggleDone: toggleDone,

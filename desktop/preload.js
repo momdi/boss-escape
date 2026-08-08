@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('desk', {
   reportCats: function (list) { ipcRenderer.send('cats:here', list); },
   onGiftDone: function (fn) { ipcRenderer.on('giftDone', function (e, p) { fn(p); }); },
   metCat: function (b) { ipcRenderer.send('cat:met', b); },
+  leftCat: function (b) { ipcRenderer.send('cat:left', b); },
+  onLeft: function (fn) { ipcRenderer.on('left', function (e, b) { fn(b); }); },
   bowlMenu: function () { ipcRenderer.send('bowl:menu'); },
   catMenu: function (c) { ipcRenderer.send('cat:menu', c); },
   setSound: function (on) { ipcRenderer.send('sound:set', !!on); },

@@ -3,7 +3,7 @@
    overlay: 투명·클릭통과 창 (냥이 + 밥그릇)
    memo   : 할 일 창 (밥그릇 더블클릭으로 열림)
    =========================================================== */
-const { app, BrowserWindow, screen, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -83,7 +83,13 @@ function createOverlay() {
     focusable: true,
     alwaysOnTop: true,
     fullscreenable: false,
-    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      webviewTag: false,
+    },
   });
   overlay.setAlwaysOnTop(true, 'screen-saver');
   overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -109,7 +115,13 @@ function createMemo(show) {
     resizable: true,
     show: show !== false,
     backgroundColor: '#faf8f4',
-    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      webviewTag: false,
+    },
   });
   memo.loadFile(path.join(__dirname, 'app', 'web', 'index.html'));
   /* 닫아도 상태 엔진은 살려 둔다 */
@@ -210,6 +222,25 @@ ipcMain.on('bowl:menu', function () {
 });
 
 ipcMain.on('cat:met', function (e, breed) { toMemo('met', breed); });
+ipcMain.on('cat:left', function (e, breed) { toMemo('left', breed); });
+
+/* 두 번 실행되면 밥그릇도 두 개가 된다 — 한 번만 뜨도록 */
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', function () { createMemo(); });
+}
+
+/* 창 안에서 외부 페이지가 열리지 않게 막는다 */
+app.on('web-contents-created', function (e, contents) {
+  contents.setWindowOpenHandler(function (d) {
+    if (/^https?:$/.test(new URL(d.url).protocol)) shell.openExternal(d.url);
+    return { action: 'deny' };
+  });
+  contents.on('will-navigate', function (ev, url) {
+    if (!url.startsWith('file://')) ev.preventDefault();
+  });
+});
 
 app.whenReady().then(function () {
   log('=== ready ===', process.version, process.versions.electron);

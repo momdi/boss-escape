@@ -7,6 +7,13 @@
 
   document.documentElement.classList.add('is-desktop');
 
+  /* 냥이는 바탕화면에만 산다. 창 안의 시뮬레이션은 멈춘다. */
+  Scene.hooks.canSpawn = function () { return false; };
+  Scene.hooks.onArrive = function () {};
+  Scene.hooks.onLeave = function () {};
+  Scene.leaveAll();
+  Scene.visitors.length = 0;
+
   function snapshot() {
     const s = State.data;
     const gifts = GIFTS.filter(function (g) { return (s.inventory[g.id] || 0) > 0; })
@@ -76,10 +83,24 @@
     push();
   });
 
+  function nameOf(breed) {
+    const info = CAT_BY_ID[breed];
+    const rec = State.data.cats[breed];
+    return (rec && rec.name) || (info ? T.tx(info, 'species') : breed);
+  }
+
   window.desk.onMet(function (breed) {
-    State.meetCat(breed);
+    const res = State.meetCat(breed);
+    const info = CAT_BY_ID[breed];
+    window.desk.notice(res.isNew && info
+      ? T.t('newVisitor', { rarity: T.rarityLabel(info.rarity) })
+      : T.t('visitorCame', { name: nameOf(breed) }));
     UI.renderHeader();
     push();
+  });
+
+  window.desk.onLeft(function (breed) {
+    window.desk.notice(T.t('visitorLeft', { name: nameOf(breed) }));
   });
 
   /* 게임 메시지는 메모 창 대신 바탕화면 밥그릇 옆에 */

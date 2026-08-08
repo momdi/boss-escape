@@ -50,7 +50,13 @@
     },
     "win": {
       "target": [
-        "nsis"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "icon": "app/img/icon-512.png"
     },

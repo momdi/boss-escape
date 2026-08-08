@@ -223,7 +223,10 @@ function update(dt) {
     } else if (c.state === 'leave') {
       c.x += c.dir * speed * dt;
       c.trav += speed * dt;
-      if (c.x < -0.16 || c.x > 1.16) visitors.splice(i, 1);
+      if (c.x < -0.16 || c.x > 1.16) {
+        visitors.splice(i, 1);
+        if (c.arrived && window.desk) window.desk.leftCat(c.breed);
+      }
     }
   }
 }
@@ -266,6 +269,15 @@ function drawNotice(dt) {
   const b = bowlBox();
   const fade = Math.min(1, notice.t / 0.5);
   const fs = Math.max(11, Math.round(k * 3.4));
+
+  /* 밥그릇 주변 냥이들 중 가장 높은 머리 위로 올린다 */
+  let topY = b.y;
+  for (let i = 0; i < visitors.length; i++) {
+    const c = visitors[i];
+    if (Math.abs(c.x * W - (b.x + b.w / 2)) > W * 0.22) continue;
+    const cb = catBox(c);
+    if (cb.y < topY) topY = cb.y;
+  }
   ctx.save();
   ctx.globalAlpha = Math.max(0, fade);
   ctx.font = '500 ' + fs + 'px -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif';
@@ -276,7 +288,7 @@ function drawNotice(dt) {
   const bw = tw + pad * 2;
   const bh = fs * 2.1;
   const bx = b.x + b.w / 2 - bw / 2;
-  const by = b.y - bh - k * 3;
+  const by = topY - bh - k * 4;
   ctx.fillStyle = 'rgba(58, 47, 34, 0.88)';
   if (ctx.roundRect) {
     ctx.beginPath();
