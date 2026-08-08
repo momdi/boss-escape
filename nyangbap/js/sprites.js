@@ -35,7 +35,6 @@ const CAT_ASSETS = {
   mackerel: { stand: ['img/cats/tb_stand.png', 97, 86], loaf: ['img/cats/tb_loaf.png', 94, 65], sameScale: true, sizeMul: 1.539 },
   calico:   { stand: ['img/cats/cc_stand.png', 204, 175], loaf: ['img/cats/cc_loaf.png', 165, 121], sameScale: true, sizeMul: 0.730 },
   siam:     { stand: ['img/cats/siam_stand.png', 193, 168], loaf: ['img/cats/siam_loaf.png', 174, 113], sameScale: true, sizeMul: 0.783 },
-  tuxedo:   { stand: ['img/cats/tuxedo_stand.png', 97, 86], loaf: ['img/cats/tuxedo_loaf.png', 95, 65], sameScale: true, sizeMul: 1.519 },
   smoke:    { stand: ['img/cats/smoke_stand.png', 97, 86], loaf: ['img/cats/smoke_loaf.png', 95, 65], sameScale: true, sizeMul: 1.519 },
   black:    { stand: ['img/cats/black_stand.png', 97, 86], loaf: ['img/cats/black_loaf.png', 95, 65], sameScale: true, sizeMul: 1.519 },
   fluff:    { stand: ['img/cats/fluff_stand.png', 212, 168], loaf: ['img/cats/fluff_loaf.png', 175, 105], sameScale: true, sizeMul: 0.736 },

@@ -48,7 +48,7 @@
     const amount = mode === 'one' ? 1 : room;
     const r = State.feed('normal', amount);
     if (r.ok) {
-      Sound.play('drop');
+      /* 소리는 바탕화면 쪽에서 한 번만 낸다 (양쪽에서 나면 따닥 하고 겹친다) */
       UI.renderHeader();
       UI.renderScene();
       push();
@@ -61,7 +61,7 @@
   /* 황금 사료 담기 */
   window.desk.onFeedSpecial(function () {
     const r = State.feed('special', 1);
-    if (r.ok) { Sound.play('sparkle'); UI.renderHeader(); push(); }
+    if (r.ok) { UI.renderHeader(); push(); }
     else { Sound.play('nope'); UI.toast(r.reason); }
   });
 

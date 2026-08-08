@@ -130,42 +130,6 @@ const CATS = [
     likes: 'gift_yarn',
   },
   {
-    id: 'tuxedo', species: '턱시도', species_en: 'Tuxedo 1', rarity: 'common', coat: 'tuxedo',
-    desc: '늘 정장을 차려입은 것 같은 얼굴. 밥 먹기 전에 앞발을 한 번 턴다.',
-    desc_en: '',
-    likes: 'gift_yarn',
-  },
-  {
-    id: 'tuxedo2', species: '정장이', species_en: 'Tuxedo 2', rarity: 'common', coat: 'tuxedo',
-    desc: '어딜 가도 차려입은 티가 난다. 걸음걸이가 점잖다.',
-    desc_en: '',
-    likes: 'gift_can',
-  },
-  {
-    id: 'tuxedo3', species: '집사', species_en: 'Tuxedo 3', rarity: 'common', coat: 'tuxedo',
-    desc: '사람을 관찰하는 게 취미. 밥은 마지막에 먹는다.',
-    desc_en: '',
-    likes: 'gift_churu_chicken',
-  },
-  {
-    id: 'tuxedo4', species: '펭귄', species_en: 'Tuxedo 4', rarity: 'common', coat: 'tuxedo',
-    desc: '뒤뚱거리며 걷는 모습이 꼭 펭귄 같다.',
-    desc_en: '',
-    likes: 'gift_cushion',
-  },
-  {
-    id: 'tuxedo5', species: '나비', species_en: 'Tuxedo 5', rarity: 'common', coat: 'tuxedo',
-    desc: '목 아래 흰 무늬가 나비넥타이를 닮았다.',
-    desc_en: '',
-    likes: 'gift_matatabi',
-  },
-  {
-    id: 'tuxedo6', species: '까치', species_en: 'Tuxedo 6', rarity: 'common', coat: 'tuxedo',
-    desc: '까치처럼 종종거리며 걷는다.',
-    desc_en: '',
-    likes: 'gift_yarn',
-  },
-  {
     id: 'white', species: '하양이', species_en: 'Snow 1', rarity: 'common', coat: 'white',
     desc: '먼지 하나 안 묻은 흰 털. 어디서 자고 오는지 아무도 모른다.',
     desc_en: '',

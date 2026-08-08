@@ -94,12 +94,4 @@ const CAT_ANIM = {
     play: { face: 1, frames: [['img/cats/golden_play_0.png', 130, 74], ['img/cats/golden_play_1.png', 155, 80]] },
     sleep: { face: 1, frames: [['img/cats/golden_sleep.png', 100, 62]] },
   },
-  tuxedo: {
-    walk: { face: 1, frames: [['img/cats/tuxedo_walk_0.png', 104, 86], ['img/cats/tuxedo_walk_1.png', 112, 85], ['img/cats/tuxedo_walk_2.png', 112, 86], ['img/cats/tuxedo_walk_3.png', 119, 85], ['img/cats/tuxedo_walk_4.png', 105, 86]] },
-    eat: { face: 1, frames: [['img/cats/tuxedo_eat_0.png', 125, 77], ['img/cats/tuxedo_eat_1.png', 134, 67]] },
-    groom: { face: 1, frames: [['img/cats/tuxedo_groom_0.png', 116, 82], ['img/cats/tuxedo_groom_1.png', 120, 82], ['img/cats/tuxedo_groom_2.png', 115, 87]] },
-    meow: { face: 1, frames: [['img/cats/tuxedo_meow_0.png', 120, 84], ['img/cats/tuxedo_meow_1.png', 117, 84]] },
-    play: { face: 1, frames: [['img/cats/tuxedo_play_0.png', 130, 74], ['img/cats/tuxedo_play_1.png', 155, 80]] },
-    sleep: { face: 1, frames: [['img/cats/tuxedo_sleep.png', 100, 62]] },
-  },
 };

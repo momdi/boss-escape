@@ -697,6 +697,7 @@ function shoot(catId) {
 
 function applyState(s) {
   const first = !st;
+  const st0 = st && st.food ? st.food : null;
   const prevFood = (st && st.food) ? st.food.n : 0;
   const eaten = Math.max(0, prevFood - (s.food ? s.food.n : 0));
   pending = Math.max(0, pending - eaten);
@@ -705,7 +706,8 @@ function applyState(s) {
   if (s.bowl && !bowl.drag) { bowl.x = s.bowl.x; bowl.y = s.bowl.y; }
   if (typeof Sound !== 'undefined') Sound.setEnabled(s.sound !== false);
   if (!first && s.food && s.food.n > prevFood) {
-    play('drop');
+    const goldUp = (s.food.special || 0) > ((st0 && st0.special) || 0);
+    play(goldUp ? 'sparkle' : 'drop');
     if (prevFood === 0 && visitors.length < 3) spawnTimer = Math.min(spawnTimer, 5);
   }
 }
