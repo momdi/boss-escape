@@ -85,9 +85,14 @@ function drawBowl() {
 }
 
 /* 밥그릇에서 떨어질 거리 (고양이 몸 크기 기준) */
+function catScale(set) {
+  /* sizeMul 은 스프라이트 면적으로 뽑은 보정값이라 체감 덩치가 고르게 맞는다 */
+  return k * 0.18 * (set.sizeMul || 1);
+}
+
 function standOff(breed, wide) {
   const set = catSprites(breed);
-  const s = (k * 26 * (set.sizeMul || 1)) / set.stand.w;
+  const s = catScale(set);
   const w = set.stand.w * s;
   return (w * (wide ? 0.40 : 0.26)) / W;      /* 머리가 밥그릇 위에 오도록 */
 }
@@ -97,6 +102,7 @@ function standOff(breed, wide) {
 const visitors = [];
 let spawnTimer = 6;
 let catSeq = 0;
+let pending = 0;      /* 먹었다고 알렸지만 아직 반영 전인 밥알 수 */
 let reportTimer = 0;
 
 function spawn(breed) {
@@ -148,7 +154,9 @@ function update(dt) {
     }
   }
 
-  const grains = (st && st.food) ? st.food.n : 0;
+  /* 메인 프로세스 왕복이 늦어 같은 밥알을 두 번 먹는 일이 없도록
+     로컬에서 먼저 차감해 둔 만큼을 빼고 센다 */
+  const grains = Math.max(0, ((st && st.food) ? st.food.n : 0) - pending);
 
   for (let i = visitors.length - 1; i >= 0; i--) {
     const c = visitors[i];
@@ -190,11 +198,17 @@ function update(dt) {
       if (c.bite >= 3.0) {
         c.bite = 0;
         if (grains > 0) {
+          pending++;
           if (window.desk) window.desk.eatOne();
           play('drop');
           c.ate++;
         }
-        if (grains <= 0 || c.ate >= c.wants) { c.state = 'rest'; c.waiting = grains <= 0; c.t = 0; }
+        const left = grains - (grains > 0 ? 1 : 0);
+        if (left <= 0 || c.ate >= c.wants) {
+          c.state = 'rest';
+          c.waiting = left <= 0;
+          c.t = 0;
+        }
       }
     } else if (c.state === 'rest') {
       if (Math.abs(bowl.x - c.x) > 0.14 || Math.abs(bowl.y - c.y) > 0.08) {
@@ -204,19 +218,36 @@ function update(dt) {
         c.actT -= dt;
         if (c.actT <= 0) c.act = null;
       }
+      if (c.napping && c.napX !== undefined) {
+        /* 자는 자리로 스르르 이동 */
+        c.x += (c.napX - c.x) * Math.min(1, dt * 2.2);
+        c.y += (c.napY - c.y) * Math.min(1, dt * 2.2);
+      }
       if (c.waiting) {
         /* 밥 기다리며 졸기: 잠깐 앉아 있다가 스르르 */
-        if (!c.napping && c.t > 3) c.napping = true;
+        if (!c.napping && c.t > 3) {
+          c.napping = true;
+          const side = c.x >= bowl.x ? 1 : -1;
+          c.napX = bowl.x + side * (standOff(c.breed, true) + 0.02 + Math.random() * 0.03);
+          c.napY = bowl.y + (Math.random() - 0.4) * 0.035;
+        }
         if (grains > 0) {
           c.waiting = false;
           c.napping = false;
+          c.napX = undefined;
           c.jump = 0.52;                 /* 깜짝 놀라 벌떡 */
           play('meow');
           c.state = 'eat'; c.t = 0; c.bite = 0;
         }
         c.rest = 9999;                   /* 기다리는 동안엔 안 떠난다 */
       } else {
-        if (!c.napping && !c.actT && c.t > 5 && Math.random() < dt * 0.10) c.napping = true;
+        if (!c.napping && !c.actT && c.t > 5 && Math.random() < dt * 0.10) {
+          c.napping = true;
+          /* 밥그릇 위에서 자지 않도록 옆으로 조금 물러난다 */
+          const side = c.x >= bowl.x ? 1 : -1;
+          c.napX = bowl.x + side * (standOff(c.breed, true) + 0.02 + Math.random() * 0.03);
+          c.napY = bowl.y + (Math.random() - 0.4) * 0.035;
+        }
         if (!c.napping && !c.actT && Math.random() < dt * 0.08) { c.act = 'groom'; c.actT = 3.2; }
       }
       if (c.t >= c.rest) { startLeave(c); c.t = 0; }
@@ -270,14 +301,7 @@ function drawNotice(dt) {
   const fade = Math.min(1, notice.t / 0.5);
   const fs = Math.max(11, Math.round(k * 3.4));
 
-  /* 밥그릇 주변 냥이들 중 가장 높은 머리 위로 올린다 */
-  let topY = b.y;
-  for (let i = 0; i < visitors.length; i++) {
-    const c = visitors[i];
-    if (Math.abs(c.x * W - (b.x + b.w / 2)) > W * 0.22) continue;
-    const cb = catBox(c);
-    if (cb.y < topY) topY = cb.y;
-  }
+
   ctx.save();
   ctx.globalAlpha = Math.max(0, fade);
   ctx.font = '500 ' + fs + 'px -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif';
@@ -288,7 +312,9 @@ function drawNotice(dt) {
   const bw = tw + pad * 2;
   const bh = fs * 2.1;
   const bx = b.x + b.w / 2 - bw / 2;
-  const by = topY - bh - k * 4;
+  /* 밥그릇 아래에 띄우되, 화면 밖으로 나가면 위로 올린다 */
+  let by = b.y + b.h + k * 2;
+  if (by + bh > H - k) by = b.y - bh - k * 2;
   ctx.fillStyle = 'rgba(58, 47, 34, 0.88)';
   if (ctx.roundRect) {
     ctx.beginPath();
@@ -306,7 +332,7 @@ function drawNotice(dt) {
 
 function catBox(c) {
   const set = catSprites(c.breed);
-  const s = (k * 26 * (set.sizeMul || 1)) / set.stand.w;
+  const s = catScale(set);
   const w = set.stand.w * s, h = set.stand.h * s;
   return { w: w, h: h, x: c.x * W - w / 2, y: c.y * H - h };
 }
@@ -319,7 +345,7 @@ function drawCat(c) {
 
   let sp = napping ? set.loaf : set.stand;
   let face = -1;
-  const s = (k * 26 * (set.sizeMul || 1)) / set.stand.w;
+  const s = catScale(set);
   let scale = s, bob = 0, rot = 0, sqx = 1, sqy = 1;
 
   if (walking && set.walk) {
@@ -445,6 +471,15 @@ function draw() {
   drawBowl();
   order.filter(function (c) { return c.y > bowl.y; }).forEach(drawCat);
   drawNotice(lastDt);
+
+  if (flash > 0) {
+    flash -= lastDt;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, flash / 0.35) * 0.75;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
 }
 
 let lastDt = 0;
@@ -617,11 +652,53 @@ window.addEventListener('dblclick', function (e) {
   if (window.desk) window.desk.openMemo();
 });
 
+/* ---------- 사진 찍기 ---------- */
+
+let flash = 0;
+
+function shoot(catId) {
+  const c = visitors.find(function (v) { return v.id === catId; }) || visitors[0];
+  if (!c) return;
+  const b = catBox(c);
+  const pad = b.w * 0.55;
+  const sx = Math.max(0, Math.round(b.x - pad));
+  const sy = Math.max(0, Math.round(b.y - pad * 0.7));
+  const sw = Math.min(W - sx, Math.round(b.w + pad * 2));
+  const sh = Math.min(H - sy, Math.round(b.h + pad * 1.4));
+
+  const out = document.createElement('canvas');
+  out.width = 300;
+  out.height = 200;
+  const oc = out.getContext('2d');
+  oc.imageSmoothingEnabled = false;
+  oc.fillStyle = '#faf8f4';
+  oc.fillRect(0, 0, out.width, out.height);
+  /* 가로세로 비율을 맞춰 가운데를 담는다 */
+  const want = out.width / out.height;
+  let cw = sw, ch = Math.round(sw / want);
+  if (ch > sh) { ch = sh; cw = Math.round(sh * want); }
+  const cx = sx + Math.round((sw - cw) / 2);
+  const cy = sy + Math.round((sh - ch) / 2);
+  oc.drawImage(cv, cx, cy, cw, ch, 0, 0, out.width, out.height);
+
+  let url = '';
+  try { url = out.toDataURL('image/webp', 0.72); } catch (e) { url = ''; }
+  if (url.indexOf('data:image/webp') !== 0) url = out.toDataURL('image/jpeg', 0.72);
+
+  flash = 0.35;
+  c.heart = 1.4;
+  play('shutter');
+  if (window.desk) window.desk.savePhoto({ breed: c.breed, url: url });
+}
+
 /* ---------- 상태 동기화 ---------- */
 
 function applyState(s) {
   const first = !st;
   const prevFood = (st && st.food) ? st.food.n : 0;
+  const eaten = Math.max(0, prevFood - (s.food ? s.food.n : 0));
+  pending = Math.max(0, pending - eaten);
+  if (s.food && s.food.n === 0) pending = 0;
   st = s;
   if (s.bowl && !bowl.drag) { bowl.x = s.bowl.x; bowl.y = s.bowl.y; }
   if (typeof Sound !== 'undefined') Sound.setEnabled(s.sound !== false);
@@ -639,6 +716,7 @@ function play(name) {
 }
 if (window.desk) {
   window.desk.onNotice(showNotice);
+  window.desk.onShoot(shoot);
   window.desk.onGiftDone(function (p) {
     if (p && p.summon) {
       spawn(pickBreed());

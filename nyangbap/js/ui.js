@@ -18,7 +18,7 @@ const UI = (function () {
   function cache() {
     ['hdDate', 'hdKibble', 'hdSpecial', 'hdSpecialNum', 'hdFood', 'hdShop', 'hdAlbum',
       'hdKibbleIco', 'hdSpecialIco',
-      'todoList', 'addForm', 'addInput', 'noteList', 'noteForm', 'noteInput', 'noteDue', 'albumGrid', 'albumCount', 'shopList',
+      'todoList', 'addForm', 'addInput', 'noteList', 'noteForm', 'noteInput', 'noteDue', 'noteToggle', 'albumGrid', 'albumCount', 'shopList',
       'tabs', 'toast', 'sheetWrap', 'sheet', 'sheetDim', 'camBtn', 'giftBtn',
       'sceneHint', 'scene', 'pageHome', 'pageLog', 'pageAlbum', 'pageShop', 'pageSet',
       'calMonth', 'calGrid', 'calDow', 'calSum', 'calPrev', 'calNext', 'setList'].forEach(function (id) {
@@ -425,14 +425,19 @@ const UI = (function () {
       { value: false, label: T.t('setSoundOff') },
     ], !!s.sound, function (v) { if (onSetChange) onSetChange('sound', v); });
 
-    setSection(T.t('setAbout'));
-    const made = document.createElement('div');
-    made.className = 'set-made';
-    made.textContent = T.t('madeBy');
-    el.setList.appendChild(made);
-    linkRow(T.t('setHome'), 'heymomdi.com', APP_INFO.home);
-    linkRow(T.t('setMail'), APP_INFO.mail, 'mailto:' + APP_INFO.mail);
-    textRow(T.t('setVersion'), 'v' + APP_INFO.version);
+    /* 만든 사람 정보는 맨 아래 한 줄로 조용히 */
+    const about = document.createElement('p');
+    about.className = 'set-about';
+    const home = document.createElement('a');
+    home.href = APP_INFO.home;
+    home.target = '_blank';
+    home.rel = 'noopener';
+    home.textContent = 'heymomdi.com';
+    const mail = document.createElement('a');
+    mail.href = 'mailto:' + APP_INFO.mail;
+    mail.textContent = APP_INFO.mail;
+    about.append(T.t('madeBy') + ' · v' + APP_INFO.version + ' · ', home,
+                 document.createTextNode(' · '), mail);
 
     setSection(T.t('setUpdate'));
     const upd = document.createElement('button');
@@ -457,6 +462,8 @@ const UI = (function () {
     sub.className = 'set-note';
     sub.textContent = T.t('setResetSub');
     el.setList.appendChild(sub);
+
+    el.setList.appendChild(about);
   }
 
   /* ================= 씬 버튼 ================= */

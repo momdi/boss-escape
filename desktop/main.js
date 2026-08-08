@@ -175,7 +175,14 @@ ipcMain.on('sound:set', function (e, on) { state.sound = !!on; broadcast(); });
 /* 고양이 우클릭 메뉴 — 선물 주기 */
 ipcMain.on('cat:menu', function (e, cat) {
   const gifts = state.gifts || [];
-  const items = [{ label: cat.name, enabled: false }, { type: 'separator' }];
+  const items = [
+    { label: cat.name, enabled: false },
+    { type: 'separator' },
+    { label: '사진 찍기', click: function () {
+        if (overlay && !overlay.isDestroyed()) overlay.webContents.send('shoot', cat.id);
+      } },
+    { type: 'separator' },
+  ];
   if (!gifts.length) {
     items.push({ label: '상점에서 선물을 사 보세요', enabled: false });
   } else {
@@ -224,6 +231,9 @@ ipcMain.on('bowl:menu', function () {
 ipcMain.on('cat:met', function (e, breed) { toMemo('met', breed); });
 ipcMain.on('cat:left', function (e, breed) { toMemo('left', breed); });
 
+/* 오버레이가 찍은 사진을 메모 창(도감)에 저장 */
+ipcMain.on('photo:save', function (e, p) { toMemo('photo', p); });
+
 /* 두 번 실행되면 밥그릇도 두 개가 된다 — 한 번만 뜨도록 */
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -250,7 +260,21 @@ app.whenReady().then(function () {
   log('overlay ok');
   createMemo();
   log('memo ok');
+
+  /* 오버레이를 모든 데스크톱에 띄우면 Electron 이 앱을 백그라운드(UIElement)로
+     바꿔 버려서 Dock 에 안 뜬다. 다시 일반 앱으로 되돌린다. */
+  if (app.dock) {
+    app.dock.show();
+    const icon = path.join(__dirname, 'app', 'img', 'icon-512.png');
+    try {
+      const { nativeImage } = require('electron');
+      if (fs.existsSync(icon)) app.dock.setIcon(nativeImage.createFromPath(icon));
+    } catch (e) { log('dock icon', e && e.message); }
+  }
+  log('dock shown');
+
 });
 
+app.on('activate', function () { createMemo(); });
 app.on('before-quit', function () { app.isQuitting = true; });
 app.on('window-all-closed', function () { app.quit(); });

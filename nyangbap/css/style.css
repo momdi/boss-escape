@@ -486,13 +486,16 @@ button {
 .set-v { font-size: 11.5px; font-weight: 600; letter-spacing: 0; }
 a.set-row:hover .set-v { color: var(--clay); }
 
-.set-made {
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--ink);
-  margin-bottom: 8px;
+.set-about {
+  margin: 22px 0 4px;
+  font-size: 9.5px;
+  line-height: 1.7;
+  color: var(--ink-dim);
+  text-align: center;
+  word-break: keep-all;
 }
+.set-about a { color: inherit; text-decoration: none; }
+.set-about a:hover { color: var(--ink-mid); text-decoration: underline; }
 
 .set-danger {
   width: 100%;
@@ -845,8 +848,8 @@ a.set-row:hover .set-v { color: var(--clay); }
 /* ===== 씬: 방 배경 없이 아이보리 ===== */
 .scene { background: var(--ivory); }
 .scene-hint {
-  top: 6px;
-  bottom: auto;
+  top: auto;
+  bottom: 6px;
   font-size: 11px;
   pointer-events: none;
   background: transparent;
@@ -990,3 +993,16 @@ a.set-row:hover .set-v { color: var(--clay); }
 .hd-ico:hover { background: var(--ivory-lo); color: var(--ink); }
 .hd-ico.on { color: var(--clay, #a9714a); }
 .hd-ico:active { transform: translateY(1px); }
+
+/* 중요한 일 — 제목 줄과 + 토글 */
+.notes-head { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; }
+.notes-head .notes-title { margin: 0; flex: 1 1 auto; }
+.notes-toggle {
+  width: 20px; height: 20px; padding: 3px;
+  border: 0; background: transparent; cursor: pointer;
+  color: var(--ink-dim); border-radius: 6px;
+}
+.notes-toggle svg { width: 100%; height: 100%; fill: currentColor; }
+.notes-toggle:hover { color: var(--ink); background: var(--ivory-lo); }
+.notes-toggle.on { color: var(--clay, #a9714a); transform: rotate(45deg); }
+.notes-add[hidden] { display: none; }

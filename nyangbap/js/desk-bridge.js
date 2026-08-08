@@ -99,6 +99,17 @@
     push();
   });
 
+  window.desk.onPhoto(function (p) {
+    if (!p || !p.url) return;
+    const rec = State.data.cats[p.breed];
+    const first = !rec || !rec.photo;
+    State.setPhoto(p.breed, p.url);
+    if (first) State.addAff(p.breed, RULES.photoAff);
+    window.desk.notice(T.t('photoSaved'));
+    UI.renderHeader();
+    push();
+  });
+
   window.desk.onLeft(function (breed) {
     window.desk.notice(T.t('visitorLeft', { name: nameOf(breed) }));
   });

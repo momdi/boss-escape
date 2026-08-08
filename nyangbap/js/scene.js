@@ -27,11 +27,11 @@ const Scene = (function () {
   };
 
   /* 방 안의 기준 좌표 (0~1) */
-  const BOWL = { x: 0.455, y: 0.96 };
+  const BOWL = { x: 0.455, y: 0.88 };
   const SPOTS = [
-    { x: 0.70, y: 0.96 },
-    { x: 0.24, y: 0.94 },
-    { x: 0.60, y: 0.99 },
+    { x: 0.70, y: 0.88 },
+    { x: 0.24, y: 0.86 },
+    { x: 0.60, y: 0.91 },
   ];
 
   let spawnTimer = 6;
@@ -84,7 +84,7 @@ const Scene = (function () {
       photographed: false,
       gifted: false,
       napping: false,
-      alpha: (typeof coatOf === 'function' ? coatOf(breed) : breed) === 'ghost' ? 0.78 : 1,
+      alpha: 1,
       newbie: !!o.newbie,
     };
     visitors.push(cat);
@@ -270,7 +270,7 @@ const Scene = (function () {
     let face = -1;
 
     /* 품종별 기준 폭: stand 기준. sameScale 세트는 포즈별 보정 불필요 */
-    const s = (k * 30 * (set.sizeMul || 1)) / set.stand.w;
+    const s = k * 0.204 * (set.sizeMul || 1);   /* 몸집(면적) 기준으로 통일 */
     const same = set.sameScale;
     let scale = s;
 

@@ -31,19 +31,19 @@ const IMG_VER = 4;
 
 /* 품종 → 시트 에셋 (stand: 서있기 / loaf: 식빵, 없으면 stand 사용) */
 const CAT_ASSETS = {
-  cheese:   { stand: ['img/cats/cheese_stand.png', 193, 168], loaf: ['img/cats/cheese_loaf.png', 175, 113], sameScale: true },
-  mackerel: { stand: ['img/cats/tb_stand.png', 97, 86], loaf: ['img/cats/tb_loaf.png', 94, 65], sameScale: true },
-  calico:   { stand: ['img/cats/cc_stand.png', 204, 175], loaf: ['img/cats/cc_loaf.png', 165, 121], sameScale: true },
-  siam:     { stand: ['img/cats/siam_stand.png', 193, 168], loaf: ['img/cats/siam_loaf.png', 174, 113], sameScale: true },
-  tuxedo:   { stand: ['img/cats/tuxedo_stand.png', 97, 86], loaf: ['img/cats/tuxedo_loaf.png', 95, 65], sameScale: true },
-  smoke:    { stand: ['img/cats/smoke_stand.png', 97, 86], loaf: ['img/cats/smoke_loaf.png', 95, 65], sameScale: true },
-  black:    { stand: ['img/cats/black_stand.png', 97, 86], loaf: ['img/cats/black_loaf.png', 95, 65], sameScale: true },
-  fluff:    { stand: ['img/cats/fluff_stand.png', 212, 168], loaf: ['img/cats/fluff_loaf.png', 175, 105], sameScale: true },
-  golden:   { stand: ['img/cats/golden_stand.png', 97, 86], loaf: ['img/cats/golden_loaf.png', 95, 65], sameScale: true },
-  white:    { stand: ['img/cats/w_stand.png', 97, 86], loaf: ['img/cats/w_loaf.png', 95, 65], sameScale: true },
-  ghost:    { stand: ['img/cats/ghost_stand.png', 212, 168], loaf: ['img/cats/ghost_loaf.png', 175, 105], sameScale: true },
-  king:     { stand: ['img/cats/king_stand.png', 193, 168], loaf: ['img/cats/king_loaf.png', 174, 113], sameScale: true },
-  berry:    { stand: ['img/cats/berry_stand.png', 185, 139], loaf: ['img/cats/berry_loaf.png', 159, 88], sameScale: true },
+  cheese:   { stand: ['img/cats/cheese_stand.png', 193, 168], loaf: ['img/cats/cheese_loaf.png', 175, 113], sameScale: true, sizeMul: 0.782 },
+  mackerel: { stand: ['img/cats/tb_stand.png', 97, 86], loaf: ['img/cats/tb_loaf.png', 94, 65], sameScale: true, sizeMul: 1.539 },
+  calico:   { stand: ['img/cats/cc_stand.png', 204, 175], loaf: ['img/cats/cc_loaf.png', 165, 121], sameScale: true, sizeMul: 0.730 },
+  siam:     { stand: ['img/cats/siam_stand.png', 193, 168], loaf: ['img/cats/siam_loaf.png', 174, 113], sameScale: true, sizeMul: 0.783 },
+  tuxedo:   { stand: ['img/cats/tuxedo_stand.png', 97, 86], loaf: ['img/cats/tuxedo_loaf.png', 95, 65], sameScale: true, sizeMul: 1.519 },
+  smoke:    { stand: ['img/cats/smoke_stand.png', 97, 86], loaf: ['img/cats/smoke_loaf.png', 95, 65], sameScale: true, sizeMul: 1.519 },
+  black:    { stand: ['img/cats/black_stand.png', 97, 86], loaf: ['img/cats/black_loaf.png', 95, 65], sameScale: true, sizeMul: 1.519 },
+  fluff:    { stand: ['img/cats/fluff_stand.png', 212, 168], loaf: ['img/cats/fluff_loaf.png', 175, 105], sameScale: true, sizeMul: 0.736 },
+  golden:   { stand: ['img/cats/golden_stand.png', 97, 86], loaf: ['img/cats/golden_loaf.png', 95, 65], sameScale: true, sizeMul: 1.519 },
+  white:    { stand: ['img/cats/w_stand.png', 97, 86], loaf: ['img/cats/w_loaf.png', 95, 65], sameScale: true, sizeMul: 1.519 },
+  ghost:    { stand: ['img/cats/ghost_stand.png', 212, 168], loaf: ['img/cats/ghost_loaf.png', 175, 105], sameScale: true, sizeMul: 0.738 },
+  king:     { stand: ['img/cats/king_stand.png', 193, 168], loaf: ['img/cats/king_loaf.png', 174, 113], sameScale: true, sizeMul: 0.783 },
+  berry:    { stand: ['img/cats/berry_stand.png', 185, 139], loaf: ['img/cats/berry_loaf.png', 159, 88], sameScale: true, sizeMul: 0.876 },
 };
 
 const _catCache = {};

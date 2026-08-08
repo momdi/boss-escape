@@ -577,6 +577,23 @@
       }
     });
 
+    function toggleNoteForm(on) {
+      const show = on === undefined ? el.noteForm.hidden : on;
+      el.noteForm.hidden = !show;
+      el.noteToggle.classList.toggle('on', show);
+      if (show) el.noteInput.focus();
+      else { el.noteInput.value = ''; el.noteDue.value = ''; }
+    }
+
+    el.noteToggle.addEventListener('click', function () {
+      Sound.play('tap');
+      toggleNoteForm();
+    });
+
+    el.noteInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') toggleNoteForm(false);
+    });
+
     el.noteForm.addEventListener('submit', function (e) {
       e.preventDefault();
       const v = el.noteInput.value;
@@ -586,6 +603,7 @@
       el.noteDue.value = '';
       Sound.play('tap');
       UI.renderNotes();
+      toggleNoteForm(false);
     });
 
     el.addForm.addEventListener('submit', function (e) {
