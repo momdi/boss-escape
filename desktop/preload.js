@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('desk', {
   setInteractive: function (on) { ipcRenderer.send('overlay:interactive', !!on); },
   moveBowl: function (pos) { ipcRenderer.send('bowl:move', pos); },
   feed: function (mode) { ipcRenderer.send('bowl:feed', mode); },
+  undoFeed: function () { ipcRenderer.send('bowl:undoFeed'); },
+  onUndoFeed: function (fn) { ipcRenderer.on('undoFeed', function () { fn(); }); },
   eatOne: function () { ipcRenderer.send('food:eat'); },
   openMemo: function () { ipcRenderer.send('memo:open'); },
   pushState: function (s) { ipcRenderer.send('state:push', s); },
@@ -29,4 +31,5 @@ contextBridge.exposeInMainWorld('desk', {
   onSummon: function (fn) { ipcRenderer.on('summon', function () { fn(); }); },
   notice: function (text) { ipcRenderer.send('notice', text); },
   onNotice: function (fn) { ipcRenderer.on('notice', function (e, t) { fn(t); }); },
+  onMemoBounds: function (fn) { ipcRenderer.on('memoBounds', function (e, b) { fn(b); }); },
 });

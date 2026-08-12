@@ -166,6 +166,16 @@ const State = (function () {
     return item;
   }
 
+  function editTodo(id, text) {
+    const v = (text || '').trim();
+    const t = s.todos.find(function (x) { return String(x.id) === String(id); });
+    if (!t || !v) return null;
+    t.text = v.slice(0, 24);
+    delete t.text_en;              /* 직접 고친 글은 번역하지 않는다 */
+    emit({ type: 'todo' });
+    return t;
+  }
+
   function removeTodo(id) {
     s.todos = s.todos.filter(function (x) { return x.id !== id; });
     stamp();
@@ -376,6 +386,7 @@ const State = (function () {
     on: on,
     emit: emit,
     addTodo: addTodo,
+    editTodo: editTodo,
     addNote: addNote,
     daysLeft: daysLeft,
     removeNote: removeNote,

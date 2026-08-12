@@ -115,8 +115,10 @@ const UI = (function () {
       box.className = 'todo-box';
       box.innerHTML = ICON.check;
 
-      const txt = document.createElement('span');
+      const txt = document.createElement('button');
+      txt.type = 'button';
       txt.className = 'todo-text';
+      txt.dataset.act = 'edit';
       txt.textContent = label;
 
       const mark = document.createElement('button');
@@ -439,17 +441,20 @@ const UI = (function () {
     about.append(T.t('madeBy') + ' · v' + APP_INFO.version + ' · ', home,
                  document.createTextNode(' · '), mail);
 
-    setSection(T.t('setUpdate'));
-    const upd = document.createElement('button');
-    upd.type = 'button';
-    upd.className = 'set-go';
-    upd.textContent = T.t('setUpdateBtn');
-    upd.addEventListener('click', function () { if (onSetChange) onSetChange('update'); });
-    el.setList.appendChild(upd);
-    const updSub = document.createElement('p');
-    updSub.className = 'set-note';
-    updSub.textContent = T.t('setUpdateSub');
-    el.setList.appendChild(updSub);
+    /* 업데이트 확인은 웹에서만 의미가 있다 (앱은 설치 파일을 새로 받아야 한다) */
+    if (!window.desk) {
+      setSection(T.t('setUpdate'));
+      const upd = document.createElement('button');
+      upd.type = 'button';
+      upd.className = 'set-go';
+      upd.textContent = T.t('setUpdateBtn');
+      upd.addEventListener('click', function () { if (onSetChange) onSetChange('update'); });
+      el.setList.appendChild(upd);
+      const updSub = document.createElement('p');
+      updSub.className = 'set-note';
+      updSub.textContent = T.t('setUpdateSub');
+      el.setList.appendChild(updSub);
+    }
 
     setSection(T.t('setData'));
     const btn = document.createElement('button');

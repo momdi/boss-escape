@@ -23,6 +23,8 @@
     return {
       kibble: s.kibble, special: s.special, food: s.food,
       cap: State.capacity(), gifts: gifts,
+      /* 메인 쪽 state.bowl 은 밥그릇 '위치'라 이름이 겹친다 — id 는 따로 보낸다 */
+      bowlId: s.bowl,
     };
   }
 
@@ -41,6 +43,8 @@
     if (g) { UI.renderHeader(); push(); }
   });
 
+  let lastPut = 0;
+
   window.desk.onFeed(function (mode) {
     const s = State.data;
     const room = State.capacity() - s.food.n;
@@ -48,6 +52,7 @@
     const amount = mode === 'one' ? 1 : room;
     const r = State.feed('normal', amount);
     if (r.ok) {
+      lastPut = r.put;
       /* 소리는 바탕화면 쪽에서 한 번만 낸다 (양쪽에서 나면 따닥 하고 겹친다) */
       UI.renderHeader();
       UI.renderScene();
@@ -88,6 +93,19 @@
     const rec = State.data.cats[breed];
     return (rec && rec.name) || (info ? T.tx(info, 'species') : breed);
   }
+
+  /* 더블클릭으로 창을 열 때, 직전 클릭으로 담긴 밥을 되돌린다 */
+  window.desk.onUndoFeed(function () {
+    const s = State.data;
+    const back = Math.min(s.food.n, lastPut);
+    if (back > 0) {
+      s.food.n -= back;
+      s.kibble += back;
+      UI.renderHeader();
+      push();
+    }
+    lastPut = 0;
+  });
 
   window.desk.onMet(function (breed) {
     const res = State.meetCat(breed);

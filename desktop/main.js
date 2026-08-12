@@ -22,6 +22,7 @@ const DEFAULT_STATE = {
   kibble: 0,
   food: { n: 0 },
   bowl: { x: 0.5, y: 0.94 },    /* 화면 비율 좌표 — 처음엔 화면 아래쪽 */
+  bowlId: 'bowl_basic',         /* 쓰고 있는 밥그릇 종류 (위치와 별개) */
   todos: [],
   cats: {},
   sound: true,
@@ -92,8 +93,10 @@ function createOverlay() {
       webviewTag: false,
     },
   });
-  overlay.setAlwaysOnTop(true, 'screen-saver');
-  overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  /* 'screen-saver' 레벨은 화면 녹화·캡처에서 뒤 창을 검게 만든다.
+     한 단계 낮춘 'floating' 이면 캡처에 정상으로 함께 담긴다. */
+  overlay.setAlwaysOnTop(true, 'floating');
+  overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
   overlay.setIgnoreMouseEvents(true, { forward: true });   /* 기본은 클릭 통과 */
   overlay.webContents.on('render-process-gone', function (e, d) {
     log('overlay gone', JSON.stringify(d));
@@ -122,6 +125,17 @@ function createMemo(show) {
     },
   });
   memo.loadFile(path.join(__dirname, 'app', 'web', 'index.html'));
+
+  /* 할 일 창이 덮은 영역에서는 오버레이가 클릭을 가로채지 않게 한다 */
+  const sendBounds = function () {
+    if (!overlay || overlay.isDestroyed()) return;
+    const vis = memo && !memo.isDestroyed() && memo.isVisible();
+    overlay.webContents.send('memoBounds', vis ? memo.getBounds() : null);
+  };
+  ['move', 'resize', 'show', 'hide', 'focus', 'blur', 'minimize', 'restore'].forEach(function (ev) {
+    memo.on(ev, sendBounds);
+  });
+  memo.webContents.on('did-finish-load', sendBounds);
   /* 닫아도 상태 엔진은 살려 둔다 */
   memo.on('close', function (e) {
     if (!app.isQuitting) { e.preventDefault(); memo.hide(); }
@@ -148,6 +162,7 @@ function toMemo(channel, payload) {
 }
 
 ipcMain.on('bowl:feed', function (e, mode) { toMemo('feed', mode || 'full'); });
+ipcMain.on('bowl:undoFeed', function () { toMemo('undoFeed'); });
 ipcMain.on('food:eat', function () { toMemo('eat'); });
 ipcMain.on('cats:here', function (e, list) { catsHere = list || []; });
 
@@ -158,6 +173,7 @@ ipcMain.on('state:push', function (e, snap) {
   state.food = snap.food;
   state.cap = snap.cap;
   state.gifts = snap.gifts || [];
+  state.bowlId = snap.bowlId || 'bowl_basic';
   broadcast();
 });
 

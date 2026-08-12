@@ -115,7 +115,7 @@ const I18N_TEXT = {
     rename: '이름 바꾸기',
 
     /* 방문 */
-    newVisitor: '처음 보는 {rarity}가 찾아왔어요',
+    newVisitor: '처음 보는 길냥이가 찾아왔어요',
     visitorCame: '{name} 왔다',
     visitorLeft: '{name}이(가) 돌아갔어요',
 
@@ -176,6 +176,8 @@ const I18N_TEXT = {
     setUpdate: '업데이트',
     setUpdateBtn: '최신 버전 확인',
     setUpdateSub: '새 버전이 있으면 받아옵니다. 냥이 도감과 기록은 그대로예요.',
+    setReloadBtn: '창 새로고침',
+    setReloadSub: '화면이 이상할 때 눌러 주세요. 앱 자체를 새 버전으로 바꾸려면 새 설치 파일을 받아 덮어써 설치해야 해요.',
     setUpdateDone: '최신 버전이에요',
     setData: '데이터',
     setReset: '처음부터 다시 시작',
@@ -301,7 +303,7 @@ const I18N_TEXT = {
     close: 'Close',
     rename: 'Rename',
 
-    newVisitor: 'A new {rarity} came by',
+    newVisitor: 'A new stray cat came by',
     visitorCame: '{name} is here',
     visitorLeft: '{name} went home',
 
@@ -360,6 +362,8 @@ const I18N_TEXT = {
     setUpdate: 'Update',
     setUpdateBtn: 'Check for updates',
     setUpdateSub: 'Fetches the latest version. Your album and history stay put.',
+    setReloadBtn: 'Reload window',
+    setReloadSub: 'Use this if the screen looks stuck. To move to a newer app version, download and install the new file.',
     setUpdateDone: 'You are up to date',
     setData: 'Data',
     setReset: 'Start over',

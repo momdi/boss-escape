@@ -41,8 +41,7 @@
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
       "extendInfo": {
-        "CFBundleDisplayName": "츄두리스트 베타",
-        "CFBundleName": "츄두리스트 베타"
+        "CFBundleDisplayName": "츄두리스트 베타"
       }
     },
     "dmg": {

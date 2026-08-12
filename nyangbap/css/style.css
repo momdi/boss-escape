@@ -272,6 +272,7 @@ button {
 
 .todo-box {
   flex: 0 0 auto;
+  pointer-events: none;        /* 클릭은 아래의 .todo-hit 가 받는다 */
   width: 20px;
   height: 20px;
   border: 2px solid var(--ink);
@@ -282,8 +283,7 @@ button {
 .todo-box svg { width: 14px; height: 14px; fill: var(--clay); opacity: 0; transform: scale(0.4); transition: opacity 0.16s, transform 0.16s cubic-bezier(0.2, 1.6, 0.4, 1); }
 .todo.done .todo-box { border-color: var(--ink-dim); }
 .todo.done .todo-box svg { opacity: 1; transform: scale(1); }
-.todo:not(.done) .todo-hit:hover + .todo-box,
-.todo:not(.done) .todo-box:hover { border-color: var(--clay); }
+.todo:not(.done) .todo-hit:hover + .todo-box { border-color: var(--clay); }
 
 .todo-text {
   flex: 1 1 auto;
@@ -298,8 +298,34 @@ button {
 
 .todo-hit {
   position: absolute;
-  inset: 0 48px 0 0;
+  inset: 0 auto 0 0;
+  width: 44px;                 /* 체크박스 자리만 */
+  z-index: 1;
   cursor: pointer;
+}
+
+/* 글자칸은 눌러서 고친다 */
+.todo-text {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: text;
+  padding: 2px 4px;
+  margin-left: -4px;
+  border-radius: 6px;
+}
+.todo-text:hover { background: var(--ivory-lo); }
+.todo-edit {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid var(--clay, #a9714a);
+  background: transparent;
+  font: inherit;
+  color: var(--ink);
+  padding: 2px 4px;
+  margin-left: -4px;
 }
 
 .todo-mark {

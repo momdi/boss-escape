@@ -44,7 +44,7 @@ resize();
 const bowl = { x: 0.5, y: 0.8, drag: false, dx: 0, dy: 0, moved: false };
 
 function bowlBox() {
-  const sp = bowlSprite('bowl_basic');
+  const sp = bowlSprite((st && st.bowlId) || 'bowl_basic');
   const kb = Math.max(2, Math.round(k * 0.8));
   const w = sp.w * kb, h = sp.h * kb;
   return { sp: sp, kb: kb, w: w, h: h,
@@ -146,9 +146,10 @@ function update(dt) {
     /* 아무도 없으면 조금 빨리, 이미 있으면 아주 느긋하게 */
     const food = st && st.food && st.food.n > 0;
     spawnTimer = visitors.length === 0
-      ? (food ? 8 + Math.random() * 12 : 30 + Math.random() * 40)
-      : (food ? 35 + Math.random() * 45 : 90 + Math.random() * 60);
-    if (visitors.length < 3 && (food || visitors.length === 0)) {
+      ? 8 + Math.random() * 12          /* 아무도 없으면 곧 온다 */
+      : 35 + Math.random() * 45;        /* 이미 있으면 느긋하게 */
+    /* 밥이 있어야 냥이가 찾아온다 */
+    if (food && visitors.length < 3) {
       spawn(pickBreed());
     }
   }
@@ -501,17 +502,21 @@ requestAnimationFrame(loop);
 
 /* ---------- 마우스: 밥그릇/냥이 위에서만 클릭을 받는다 ---------- */
 
-function hitBowl(px, py) {
+function hitBowl(px, py, pad) {
+  if (overMemo(px, py)) return false;
   const b = bowlBox();
-  return px >= b.x - 6 && px <= b.x + b.w + 6 && py >= b.y - 6 && py <= b.y + b.h + 6;
+  const m = pad === undefined ? k * 3 : pad;
+  return px >= b.x - m && px <= b.x + b.w + m && py >= b.y - m && py <= b.y + b.h + m;
 }
 
-function hitCat(px, py) {
+function hitCat(px, py, pad) {
+  if (overMemo(px, py)) return null;
   let best = null;
   for (let i = 0; i < visitors.length; i++) {
     const c = visitors[i];
     const bx = catBox(c);
-    if (px >= bx.x && px <= bx.x + bx.w && py >= bx.y && py <= bx.y + bx.h) {
+    const m = pad === undefined ? k * 2 : pad;
+    if (px >= bx.x - m && px <= bx.x + bx.w + m && py >= bx.y - m && py <= bx.y + bx.h + m) {
       if (!best || c.y > best.y) best = c;
     }
   }
@@ -539,13 +544,16 @@ window.addEventListener('mousemove', function (e) {
     dragCat.dragMoved = true;
     return;
   }
-  setInteractive(hitBowl(px, py) || !!hitCat(px, py));
+  /* 근처에 오면 미리 켜 둔다 — 창 전환이 IPC 라 한 박자 늦기 때문 */
+  const near = k * 14;
+  setInteractive(hitBowl(px, py, near) || !!hitCat(px, py, near));
 });
 
 let dragCat = null;
 
 window.addEventListener('mousedown', function (e) {
   if (e.button !== 0) return;                 /* 좌클릭만 드래그 */
+  interactive = true;                         /* 이미 이벤트가 왔으면 활성 상태다 */
   const px = e.clientX * DPR, py = e.clientY * DPR;
   if (hitBowl(px, py)) {
     const b = bowlBox();
@@ -590,15 +598,29 @@ window.addEventListener('mouseup', function () {
 });
 
 let clickTimer = null;
+let lastFeedAt = -99;
+let fedByClick = false;
+let memoRect = null;      /* 할 일 창이 덮은 화면 영역 (CSS 픽셀) */
+
+/** 할 일 창 위라면 오버레이는 손대지 않는다 */
+function overMemo(px, py) {
+  if (!memoRect) return false;
+  const x = px / DPR + (window.screenX || 0);
+  const y = py / DPR + (window.screenY || 0);
+  return x >= memoRect.x && x <= memoRect.x + memoRect.width &&
+         y >= memoRect.y && y <= memoRect.y + memoRect.height;
+}
 window.addEventListener('click', function (e) {
   const px = e.clientX * DPR, py = e.clientY * DPR;
   if (hitBowl(px, py)) {
     if (bowl.moved) { bowl.moved = false; return; }   /* 드래그 끝은 클릭 아님 */
-    if (clickTimer) return;                            /* 더블클릭 대기 중 */
-    clickTimer = setTimeout(function () {
-      clickTimer = null;
-      if (window.desk) window.desk.feed(st && st.feedMode === 'one' ? 'one' : 'full');
-    }, 230);
+    /* 첫 클릭에 바로 담는다. 곧이어 더블클릭이 오면 담은 걸 되돌린다 */
+    const now = perf;
+    if (now - lastFeedAt < 0.45) return;               /* 더블클릭의 두 번째 클릭 */
+    lastFeedAt = now;
+    fedByClick = true;
+    play('drop');
+    if (window.desk) window.desk.feed(st && st.feedMode === 'one' ? 'one' : 'full');
     return;
   }
   const c = hitCat(px, py);
@@ -650,7 +672,11 @@ window.addEventListener('mouseleave', cancelDrag);
 window.addEventListener('dblclick', function (e) {
   const px = e.clientX * DPR, py = e.clientY * DPR;
   if (!hitBowl(px, py)) return;
-  if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+  /* 창을 열려던 것이므로 첫 클릭으로 담긴 밥은 되돌린다 */
+  if (fedByClick && perf - lastFeedAt < 0.7) {
+    fedByClick = false;
+    if (window.desk) window.desk.undoFeed();
+  }
   if (window.desk) window.desk.openMemo();
 });
 
@@ -707,7 +733,8 @@ function applyState(s) {
   if (typeof Sound !== 'undefined') Sound.setEnabled(s.sound !== false);
   if (!first && s.food && s.food.n > prevFood) {
     const goldUp = (s.food.special || 0) > ((st0 && st0.special) || 0);
-    play(goldUp ? 'sparkle' : 'drop');
+    if (goldUp) play('sparkle');
+    else if (perf - lastFeedAt > 0.6) play('drop');   /* 내가 방금 낸 소리면 생략 */
     if (prevFood === 0 && visitors.length < 3) spawnTimer = Math.min(spawnTimer, 5);
   }
 }
@@ -720,6 +747,7 @@ function play(name) {
 }
 if (window.desk) {
   window.desk.onNotice(showNotice);
+  window.desk.onMemoBounds(function (b) { memoRect = b; });
   window.desk.onShoot(shoot);
   window.desk.onSendAway(function (id) {
     const list = id === '*' ? visitors.slice()

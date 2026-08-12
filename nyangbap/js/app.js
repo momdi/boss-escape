@@ -506,6 +506,11 @@
   /* 최신 버전 받아오기: 저장 데이터는 그대로, 캐시만 비우고 새로 읽는다 */
   function checkUpdate() {
     Sound.play('tap');
+    if (window.desk) {
+      /* 앱 파일은 설치본 안에 들어 있어 새로 받아올 게 없다. 창만 다시 그린다. */
+      location.reload();
+      return;
+    }
     UI.toast(T.t('setUpdateBtn'));
     const done = function () {
       const u = location.href.split('#')[0].split('?')[0];
@@ -547,6 +552,37 @@
 
   /* ================= 이벤트 ================= */
 
+  /** 할 일 글자를 그 자리에서 고친다 */
+  function startEditTodo(li, id) {
+    if (li.querySelector('.todo-edit')) return;
+    const txt = li.querySelector('.todo-text');
+    if (!txt) return;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'todo-edit';
+    input.maxLength = 24;
+    input.value = txt.textContent;
+    txt.replaceWith(input);
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+
+    let closed = false;
+    const finish = function (save) {
+      if (closed) return;
+      closed = true;
+      if (save && input.value.trim() && input.value.trim() !== txt.textContent) {
+        State.editTodo(id, input.value);
+        Sound.play('tap');
+      }
+      UI.renderTodos();
+    };
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+    input.addEventListener('blur', function () { finish(true); });
+  }
+
   function bind() {
     // 할 일
     el.todoList.addEventListener('click', function (e) {
@@ -570,6 +606,8 @@
         } else {
           Sound.play('uncheck');
         }
+      } else if (act === 'edit') {
+        startEditTodo(li, id);
       } else if (act === 'star') {
         const t = State.data.todos.find(function (x) { return x.id === id; });
         if (t && t.done) { Sound.play('nope'); UI.toast(T.t('alreadyDone')); return; }
@@ -710,7 +748,8 @@
       if (help) { guideSheet(); return; }
       if (use) {
         if (State.useBowl(use.dataset.use)) {
-          Sound.play('drop');
+          /* 'drop' 은 밥 주는 소리 — 교체에 쓰면 밥이 채워진 걸로 들린다 */
+          Sound.play('pop');
           UI.renderShop();
           UI.renderHeader();
           UI.toast(T.t('bowlSwapped'));
