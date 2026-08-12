@@ -52,7 +52,7 @@
     ShiftLeft: 'dash', ShiftRight: 'dash',
     Space: 'hide',
     Enter: 'confirm', NumpadEnter: 'confirm',
-    KeyP: 'pause', Escape: 'pause',
+    KeyQ: 'pause', Escape: 'pause',
     KeyM: 'mute',
   };
 
@@ -1373,7 +1373,7 @@
   function drawPause() {
     dim(0.6);
     T('일시정지', CW / 2, RY(12, 14), COL.navy, 14, 1, 'center');
-    T('P 또는 ENTER 로 계속', CW / 2, RY(14, 11), COL.gray, 11, 1, 'center');
+    T('Q 또는 ENTER 로 계속', CW / 2, RY(14, 11), COL.gray, 11, 1, 'center');
     T('M - 음소거 전환', CW / 2, RY(15, 9), COL.dim, 9, 1, 'center');
   }
 
@@ -1502,6 +1502,8 @@
   const elShareBox = document.getElementById('sharebox');
   const elShareBtn = document.getElementById('sharebtn');
   const elShareMsg = document.getElementById('sharemsg');
+  const elRetryBox = document.getElementById('retrybox');
+  const elRetryBtn = document.getElementById('retrybtn');
 
   function nickName() { return (G.nick || '').trim() || '이름없는 사원'; }
 
@@ -1545,11 +1547,23 @@
     if (elShareBox) {
       elShareBox.classList.toggle('on', showShare);
       if (showShare) {
-        placeOverlay(elShareBox, CW / 2 - 50, 200, 100, 0);
+        placeOverlay(elShareBox, CW / 2 + 4, 200, 102, 0);
         elShareBtn.style.height = Math.round(8 * SCALE) + 'px';
-        elShareBtn.style.width = Math.round(100 * SCALE) + 'px';
+        elShareBtn.style.width = Math.round(102 * SCALE) + 'px';
         elShareBtn.style.fontSize = Math.round(5 * SCALE) + 'px';
         elShareMsg.style.fontSize = Math.round(4.5 * SCALE) + 'px';
+      }
+    }
+    // 다시 하기 — 게임오버/엔딩에서 공유 버튼 왼쪽에 나란히
+    const showRetry = (s === 'over' && G.stateTimer > 0.8) || (s === 'ending' && G.stateTimer > 1.2);
+    if (elRetryBox) {
+      elRetryBox.classList.toggle('on', showRetry);
+      if (showRetry) {
+        elRetryBtn.textContent = (s === 'ending') ? '야근 ' + (G.cycle + 1) + '회차 도전' : '처음부터 다시 하기';
+        placeOverlay(elRetryBox, CW / 2 - 106, 200, 102, 0);
+        elRetryBtn.style.height = Math.round(8 * SCALE) + 'px';
+        elRetryBtn.style.width = Math.round(102 * SCALE) + 'px';
+        elRetryBtn.style.fontSize = Math.round(5 * SCALE) + 'px';
       }
     }
     if (s !== overState) { overState = s; if (elShareMsg) elShareMsg.textContent = ''; }
@@ -1574,6 +1588,14 @@
   }
 
   function toast(t) { if (elShareMsg) elShareMsg.textContent = t; }
+
+  if (elRetryBtn) {
+    elRetryBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      Sfx.init(); Sfx.resume();
+      pressed.confirm = true;
+    });
+  }
 
   if (elShareBtn) {
     elShareBtn.addEventListener('click', function (e) {

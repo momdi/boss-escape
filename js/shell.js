@@ -223,7 +223,7 @@ const Shell = (function () {
     if (on) {
       const n = PAUSE_NOTE[pauseTick % PAUSE_NOTE.length];
       elNote.innerHTML = '<b>' + n[0] + ':</b>' + n[1] +
-        '<span class="xlnote-foot">P 또는 Enter — 검토 계속</span>';
+        '<span class="xlnote-foot">Q 또는 Enter — 검토 계속</span>';
       elName.textContent = 'M14';
       elFormula.textContent = PAUSE_FORMULA[pauseTick % PAUSE_FORMULA.length];
       elMode.textContent = '편집';
@@ -253,6 +253,17 @@ const Shell = (function () {
   });
   // 창에서 눈을 떼면(다른 창 클릭 등) 자동으로 시트만 남는다
   window.addEventListener('blur', function () { setCamo(true); });
+
+  // 클릭으로도 위장/복귀할 수 있게 — 키보드 없이도 조작 가능
+  const elCamoHint = document.getElementById('camohint');
+  if (elCamoHint) elCamoHint.addEventListener('click', function () { setCamo(false); });
+  const elChartBtn = document.getElementById('chartbtn');
+  if (elChartBtn) elChartBtn.addEventListener('click', function () { setCamo(false); });
+  // 타이틀바 — / ✕ = 가짜 최소화·닫기, 실제로는 화면 위장
+  document.querySelectorAll('.xl-winbtn').forEach(function (b) {
+    if (b.textContent === '□') return;
+    b.addEventListener('click', function () { setCamo(true); });
+  });
 
   window.addEventListener('resize', function () { relayout(); placeNote(); });
   relayout();

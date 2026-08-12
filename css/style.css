@@ -289,13 +289,13 @@ body {
 }
 
 /* ---------- 사원명 입력 / 결과 공유 (셀 입력처럼 보이게) ---------- */
-#nickbox, #sharebox {
+#nickbox, #sharebox, #retrybox {
   position: absolute;
   display: none;
   line-height: normal;
   white-space: nowrap;
 }
-#nickbox.on, #sharebox.on { display: block; }
+#nickbox.on, #sharebox.on, #retrybox.on { display: block; }
 
 #nick {
   font-family: Pretendard, "맑은 고딕", "Malgun Gothic", sans-serif;
@@ -324,6 +324,20 @@ body {
 }
 #sharebtn:hover { background: #e2ecf7; }
 #sharebtn:active { transform: translateY(1px); }
+
+#retrybtn {
+  font-family: Pretendard, "맑은 고딕", "Malgun Gothic", sans-serif;
+  font-weight: 500;
+  color: #fff;
+  background: #217346;
+  border: 1px solid #185a37;
+  border-radius: 0;
+  cursor: pointer;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+#retrybtn:hover { background: #2a8a55; }
+#retrybtn:active { transform: translateY(1px); }
 #sharemsg {
   display: block;
   font-family: Pretendard, "맑은 고딕", sans-serif;
@@ -390,7 +404,17 @@ body {
 
 /* ---------- 위장 모드 (보스키) ---------- */
 body.camo #chartobj { display: none; }
-body.camo #hint { visibility: hidden; }
+body.camo #hint { display: none; }
+
+/* 위장 중 복귀 안내 — 엑셀 상태바 문구처럼 보이지만 클릭 가능 */
+#camohint { display: none; color: rgba(255,255,255,0.85); white-space: nowrap; cursor: pointer; }
+#camohint b { color: #ffe08a; font-weight: 700; }
+#camohint:hover b { text-decoration: underline; }
+body.camo #camohint { display: inline; }
+
+/* 위장 복귀용 클릭 대상들 */
+#chartbtn { cursor: pointer; }
+.xl-winbtn { cursor: pointer; }
 
 /* ---------- 일시정지 = 완전한 엑셀 화면 ---------- */
 body.xlpause #chartobj { display: none; }
